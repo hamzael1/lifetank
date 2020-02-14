@@ -36,15 +36,27 @@ class TaskList(Resource):
         )
         db.session.add(new_task)
         db.session.commit()
-        return task_single_schema.dump(new_task)
+        return task_single_schema.dump(new_task), '201'
 
 class TaskSingle(Resource):
     def get(self, task_id):
-        return {'message': 'Getting Task  {}'.format(task_id)}
-    def put(self, task_id):
-        return {'message': 'Updated Task {}'.format(task_id)}
+        task = TaskModel.query.get_or_404(task_id)
+        return task_single_schema.dump(task)
+
+    def patch(self, task_id):
+        task = TaskModel.query.get_or_404(task_id)
+
+        if 'title' in request.json:
+            task.title = request.json['title']
+
+        db.session.commit()
+        return task_single_schema.dump(task)
+
     def delete(self, task_id):
-        return {'message': 'Deleted Task {}'.format(task_id)}
+        task = TaskModel.query.get_or_404(task_id)
+        db.session.delete(task)
+        db.session.commit()
+        return '', 204
 
 api.add_resource(TaskList, '/tasks/')
 api.add_resource(TaskSingle,'/tasks/<string:task_id>/')
