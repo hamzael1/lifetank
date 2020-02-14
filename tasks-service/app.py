@@ -1,17 +1,42 @@
-from flask import Flask
+from flask import Flask, request
 from flask_restful import Resource, Api
 
-app = Flask(__name__)
-api = Api(app)
+from flask_marshmallow import Marshmallow 
 
-tasks = []
+from flask_sqlalchemy import SQLAlchemy
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
+
+db = SQLAlchemy(app)
+api = Api(app)
+ma = Marshmallow(app) # new
+
+class TaskModel(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(50))
+
+    def __repr__(self):
+        return '<Task %s>' % self.title
+
+class TaskSchema(ma.Schema):
+    class Meta:
+        fields = ("id", "title")
+
+task_single_schema = TaskSchema()
+task_list_schema = TaskSchema(many=True)
 
 class TaskList(Resource):
     def get(self):
-        return {'tasks': tasks}
+        tasks = TaskModel.query.all()
+        return task_list_schema.dump(tasks)
     def post(self):
-        return {'message': 'Adding Task'}
-
+        new_task = TaskModel(
+            title=request.json['title'],
+        )
+        db.session.add(new_task)
+        db.session.commit()
+        return task_single_schema.dump(new_task)
 
 class TaskSingle(Resource):
     def get(self, task_id):
