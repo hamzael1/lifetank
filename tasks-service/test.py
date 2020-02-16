@@ -27,7 +27,7 @@ class TestTasksAPI:
 
     def test_get_list_of_tasks(self):
         """
-            Check Get all Tasks Request
+            TEST Get all Tasks Request
         """
         response = requests.get('{}/tasks/'.format(ROOT_URL))
         assert response.status_code == 200
@@ -39,12 +39,24 @@ class TestTasksAPI:
 
     def test_get_specific_task(self):
         """
-            Check Get A Specific Task Details
+            TEST Get A Specific Task Details
         """
         with app.app_context():
             random_task = TaskModel.query.all()[0].__dict__
             response = requests.get('{}/tasks/{}/'.format(ROOT_URL, random_task['id']))
             assert response.status_code == 200, 'Should get a 200 Code Response. Got a %s instead' % response.status_code
-            assert response.json()['id'] == random_task['id'], 'ID of retrieved Task is different'
-            assert response.json()['title'] == random_task['title'], 'title of retrieved Task is different'
+            assert response.json()['id'] == random_task['id'], 'Expecting ID of retrieved Task to be the same as the one requested'
+            assert response.json()['title'] == random_task['title'], 'Expecting title of retrieved Task to be the same as the one in DB'
 
+    def test_post_new_task(self):
+        """
+            TEST POST Request to add a new Task
+        """
+        with app.app_context():
+            nbr_of_tasks_in_db = len(TaskModel.query.all())
+            response = requests.post('{}/tasks/'.format(ROOT_URL), json={
+                'title': 'New Task Test'
+            })
+            assert response.status_code == 201, 'Should get a 201 Code Response'
+            assert nbr_of_tasks_in_db + 1 == len(TaskModel.query.all()) , 'Expecting number of tasks in DB to increase by one'
+            assert response.json()['title'] == 'New Task Test', 'Expecting title of returned object to match title sent in post request'
