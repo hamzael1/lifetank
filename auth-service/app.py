@@ -20,7 +20,6 @@ CURRENT_ENV = get_current_env()
 
 def create_app():
     f = Flask(__name__)
-    
     f.config['JWT_SECRET_KEY'] = 'jwt-secret-string'
     if CURRENT_ENV == 'DEV_TEST':
         f.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///dev_test.db'
@@ -40,15 +39,21 @@ jwt = JWTManager(app)
 
 @app.route('/auth/login/', methods=['POST'])
 def login():
-    username = request.json['username']
-    res = UserModel.query.filter_by(username=username).all()
+    req_username = request.json['username']
+    res = UserModel.query.filter_by(username=req_username).all()
     if len(res) == 1:
-        return {
-            'status': 'success',
-            'access_token': create_access_token(identity = request.json['username'])
-            }, 200
+        req_password = request.json['password']
+        user = res[0].__dict__
+        if user['password'] == req_password:
+            return {
+                'status': 'success',
+                'access_token': create_access_token(identity = request.json['username']),
+                'refresh_token': create_refresh_token(identity = request.json['username'])
+                }, 200
+        else:
+            return {'message': 'auth failed'}, 401
     else:
-        return {'status': 'auth failed'}, 401
+        return {'message': 'auth failed'}, 401
 
 
 
