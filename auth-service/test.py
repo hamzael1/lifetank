@@ -3,6 +3,8 @@ import requests
 from model import db, UserModel
 from app import app
 
+from passlib.hash import sha256_crypt
+
 ROOT_URL = 'http://localhost:8888/auth'
 
 @pytest.fixture(scope='session', autouse=False)
@@ -16,7 +18,10 @@ def populate_db(test_user):
     with app.app_context():
         db.drop_all()
         db.create_all()
-        u = UserModel(username=test_user['username'], password=test_user['password'])
+        u = UserModel (
+                username=test_user['username'],
+                password=sha256_crypt.encrypt(test_user['password'])
+            )
         db.session.add(u)
         db.session.commit()
 

@@ -8,9 +8,10 @@ from model import init_db, init_schema, UserModel
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import (create_access_token, 
                                 create_refresh_token,
-                                jwt_required,
-                                jwt_refresh_token_required,
-                                get_jwt_identity, get_raw_jwt)
+                                jwt_refresh_token_required)
+
+from passlib.hash import sha256_crypt
+
 def get_current_env():
     if os.getenv('ENV') == 'PROD':
         return 'PROD'
@@ -42,9 +43,10 @@ def login():
     req_username = request.json['username']
     res = UserModel.query.filter_by(username=req_username).all()
     if len(res) == 1:
+        db_user = res[0].__dict__
+        db_user_password = db_user['password']
         req_password = request.json['password']
-        user = res[0].__dict__
-        if user['password'] == req_password:
+        if sha256_crypt.verify(req_password, db_user_password) == True:
             return {
                 'status': 'success',
                 'access_token': create_access_token(identity = request.json['username']),
