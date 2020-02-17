@@ -14,10 +14,14 @@ class TaskModel(db.Model):
     def __repr__(self):
         return '<Task %s>' % self.title
 
+def init_db(app):
+    db.init_app(app)
+
 ####### SCHEMA ########
 
 class TaskSchema(ma.Schema):
     class Meta:
         fields = ("id", "title")
 
-
+def init_schema(app):
+    ma.init_app(app)
