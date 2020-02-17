@@ -30,3 +30,6 @@ def test_login():
     """
     response = requests.post('{}/login/'.format(ROOT_URL), json={'username': 'test_user'})
     assert response.status_code == 200
+    body = response.json()
+    assert 'access_token' in body, 'Expected access token in response body'
+    assert len(body['access_token']) > 0, 'Expected access token length to be bigger than 0'
