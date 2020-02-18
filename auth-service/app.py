@@ -15,26 +15,30 @@ from passlib.hash import sha256_crypt
 def get_current_env():
     if os.getenv('ENV') == 'PROD':
         return 'PROD'
+    elif len(sys.argv) == 2 and sys.argv[1] == 'dev':
+        return 'DEV'
     else:
-        return 'DEV_TEST'
+        return 'TEST'
+
 CURRENT_ENV = get_current_env()
 
 def create_app():
     f = Flask(__name__)
     f.config['JWT_SECRET_KEY'] = 'jwt-secret-string'
-    if CURRENT_ENV == 'DEV_TEST':
-        f.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///dev_test.db'
+    if CURRENT_ENV == 'DEV':
+        f.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///dev.db'
+    elif CURRENT_ENV == 'TEST':
+        f.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
     elif CURRENT_ENV == 'PROD':
         f.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///prod.db'
     else:
         raise Exception('Unknown Environment')
     return f
 
-
 app = create_app()
 
 init_schema(app)
-init_db(app)
+init_db(app, populate_db=True if CURRENT_ENV == 'DEV' else False)
 jwt = JWTManager(app)
 
 
@@ -49,8 +53,8 @@ def login():
         if sha256_crypt.verify(req_password, db_user_password) == True:
             return {
                 'status': 'success',
-                'access_token': create_access_token(identity = request.json['username']),
-                'refresh_token': create_refresh_token(identity = request.json['username'])
+                'access_token': create_access_token(identity = {'id': db_user['id'], 'username': db_user['username']} ),
+                'refresh_token': create_refresh_token(identity = {'id': db_user['id'], 'username': db_user['username']} )
                 }, 200
         else:
             return {'message': 'auth failed'}, 401
