@@ -65,3 +65,31 @@ def test_login_failure(test_user):
         }
     )
     assert response.status_code == 401
+
+def test_refresh_token__success(test_user):
+    """
+        TEST POST Request to Get new Access token using REfresh token
+        STEP 1: login and get access and refresh tokens
+        STEP 2: request a new access token using the refresh token from step 1
+    """
+    # STEP 1
+    response = requests.post (
+        '{}/login/'.format(ROOT_URL),
+        json = {
+            'username': test_user['username'],
+            'password': test_user['password']
+        }
+    )
+    assert response.status_code == 200
+    resp_body = response.json()
+    assert 'access_token' in resp_body, 'Expected access token in response body'
+    assert 'refresh_token' in resp_body, 'Expected refresh token in response body'
+    refresh_token = resp_body['refresh_token']
+    # STEP 2
+    response = requests.post(
+        '{}/refresh/'.format(ROOT_URL),
+        headers={'Authorization': 'Bearer {}'.format(refresh_token)}
+    )
+    assert response.status_code == 200
+    resp_body = response.json()
+    assert 'access_token' in resp_body, 'Expected access token in response body'

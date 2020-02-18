@@ -8,7 +8,8 @@ from model import init_db, init_schema, UserModel
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import (create_access_token, 
                                 create_refresh_token,
-                                jwt_refresh_token_required)
+                                jwt_refresh_token_required,
+                                get_jwt_identity)
 
 from passlib.hash import sha256_crypt
 
@@ -66,7 +67,13 @@ def login():
     else:
         return {'message': 'auth failed'}, 401
 
-
+@app.route('/auth/refresh/', methods=['POST'])
+@jwt_refresh_token_required
+def token_refresh():
+    current_user = get_jwt_identity()
+    return {
+        'access_token': create_access_token(identity=current_user)
+    }
 
 
 DEBUG = False if CURRENT_ENV == 'PROD' else True
