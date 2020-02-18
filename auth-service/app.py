@@ -12,6 +12,8 @@ from flask_jwt_extended import (create_access_token,
 
 from passlib.hash import sha256_crypt
 
+import datetime
+
 def get_current_env():
     if os.getenv('ENV') == 'PROD':
         return 'PROD'
@@ -25,6 +27,9 @@ CURRENT_ENV = get_current_env()
 def create_app():
     f = Flask(__name__)
     f.config['JWT_SECRET_KEY'] = 'jwt-secret-string'
+    f.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(minutes=180 if CURRENT_ENV != 'PROD' else 15)
+    f.config['JWT_REFRESH_TOKEN_EXPIRES'] = datetime.timedelta(days=3)
+    
     if CURRENT_ENV == 'DEV':
         f.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///dev.db'
     elif CURRENT_ENV == 'TEST':
