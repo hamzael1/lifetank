@@ -1,9 +1,9 @@
 import os
 import sys
 
-from flask import Flask, request, abort, jsonify
+from flask import Flask, request, jsonify
 
-from model import init_db, init_schema, UserModel, UserSchema
+from model import init_db, UserModel, UserSchema
 
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import (create_access_token, 
@@ -24,6 +24,7 @@ def get_current_env():
         return 'TEST'
 
 CURRENT_ENV = get_current_env()
+print(CURRENT_ENV)
 
 def create_app():
     f = Flask(__name__)
@@ -44,7 +45,7 @@ def create_app():
 app = create_app()
 
 #init_schema(app)
-init_db(app, populate_db=True if CURRENT_ENV == 'DEV' else False)
+init_db(app, populate_db=True if CURRENT_ENV != 'PROD' else False)
 jwt = JWTManager(app)
 
 user_schema = UserSchema()

@@ -5,19 +5,50 @@ from model import db, TaskModel
 
 ROOT_URL='http://localhost:5000'
 
-def populate_db():
+LOGIN_URL='http://localhost:8888/auth/login/'
+
+@pytest.fixture(scope='session', autouse=False)
+def test_user_1():
+    return {
+        'id': 1000,
+        'username': 'test_user_1',
+        'password': 'test_pass'
+    }
+
+@pytest.fixture(scope='session', autouse=False)
+def test_user_2():
+    return {
+        'id': 1001,
+        'username': 'test_user_2',
+        'password': 'test_pass'
+    }
+
+NBR_TASKS_PER_USER = 10
+NBR_USERS = 2
+
+def populate_db(user_1_id, user_2_id):
     with app.app_context():
         db.drop_all()
         db.create_all()
-        for i in range(10):
-            t = TaskModel(title='Task Test %s' % i)
+        for i in range(NBR_TASKS_PER_USER):
+            t = TaskModel (
+                    title='Task Test {}'.format(i+1),
+                    user_id=user_1_id
+                )
+            db.session.add(t)
+        db.session.commit()
+        for i in range(NBR_TASKS_PER_USER):
+            t = TaskModel (
+                    title='Task Test {}'.format(i+1),
+                    user_id=user_2_id
+                )
             db.session.add(t)
         db.session.commit()
 
 @pytest.fixture(scope='module', autouse=True)
-def init_db_for_test_session(request):
+def init_db_for_test_session(request, test_user_1, test_user_2):
     db.init_app(app)
-    populate_db()
+    populate_db(test_user_1['id'], test_user_2['id'])
     def fin():
         with app.app_context():
             db.drop_all()
@@ -25,18 +56,30 @@ def init_db_for_test_session(request):
 
 class TestTasksAPI:
 
-    def test_get_list_of_tasks(self):
+    def test_get_list_of_tasks(self, test_user_1):
         """
             TEST GET Request to get all Tasks in DB
+            belonging to Logged User
         """
-        response = requests.get('{}/tasks/'.format(ROOT_URL))
+        response = requests.post(LOGIN_URL, json={
+            'username': test_user_1['username'],
+            'password': test_user_1['password'],
+        })
         assert response.status_code == 200
+
+        resp_body = response.json()
+        assert response.status_code == 200 and 'access_token' in resp_body
+        token = resp_body['access_token']
+        response = requests.get('{}/tasks/'.format(ROOT_URL),
+            headers={
+                'Authorization': 'Bearer {}'.format(token)
+            })
         nbr_of_tasks_in_response = len(response.json())
         assert nbr_of_tasks_in_response > 0
         with app.app_context():
-            nbr_of_tasks_in_db = len(TaskModel.query.all())
-            assert nbr_of_tasks_in_db == nbr_of_tasks_in_response
-
+            nbr_of_tasks_in_db = len(TaskModel.query.filter_by(user_id=test_user_1['id']).all())
+            assert nbr_of_tasks_in_response == nbr_of_tasks_in_db
+    '''
     def test_get_specific_task(self):
         """
             TEST Get A Specific Task Details from DB
@@ -85,3 +128,4 @@ class TestTasksAPI:
             response = requests.delete('{}/tasks/{}/'.format(ROOT_URL, random_task['id']))
             assert response.status_code == 204, 'Should get a 201 Code Response'
             assert nbr_of_tasks_in_db - 1 == len(TaskModel.query.all()) , 'Expecting number of tasks in DB to decrease by one'
+    '''

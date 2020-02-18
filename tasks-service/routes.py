@@ -13,9 +13,8 @@ task_list_schema = TaskSchema(many=True)
 class TaskList(Resource):
     @jwt_required
     def get(self):
-        tasks = TaskModel.query.all()
-        u = get_jwt_identity()
-        print(str(u))
+        current_user = get_jwt_identity()
+        tasks = TaskModel.query.filter_by(user_id=current_user['id']).all() # Get Tasks of user
         return task_list_schema.dump(tasks)
     def post(self):
         new_task = TaskModel(

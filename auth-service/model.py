@@ -23,16 +23,6 @@ class UserModel(db.Model):
         return sha256_crypt.hash(passwd)
 
 
-def init_db(app, populate_db=False):
-    db.init_app(app)
-    if populate_db:
-        with app.app_context():
-            db.drop_all()
-            db.create_all()
-            u =  UserModel(username='dev-user', password=UserModel.generate_hash('passpass'))
-            db.session.add(u)
-            db.session.commit()
-
 ####### SCHEMA ########
 
 class UserSchema(Schema):
@@ -49,5 +39,22 @@ class UserSchema(Schema):
         if len(value) < 8:
             raise ValidationError("Password must be at least 8 charachters long")
 
-def init_schema(app):
-    ma.init_app(app)
+
+###############
+
+def init_db(app, populate_db=False):
+    """
+        Create two users in DB: 
+            1000 dev-user-1 passpass
+            1001 dev-user-2 passpass
+    """
+    db.init_app(app)
+    if populate_db:
+        with app.app_context():
+            db.drop_all()
+            db.create_all()
+            u =  UserModel(id=1000, username='test_user_1', password=UserModel.generate_hash('test_pass'))
+            db.session.add(u)
+            u =  UserModel(id=1001, username='test_user_2', password=UserModel.generate_hash('test_pass'))
+            db.session.add(u)
+            db.session.commit()
