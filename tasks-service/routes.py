@@ -1,6 +1,7 @@
 
 from flask_restful import Resource, Api
 from flask import request
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from model import db, TaskModel, TaskSchema
 
 
@@ -10,8 +11,11 @@ task_list_schema = TaskSchema(many=True)
 ####### API ROUTES ########
 
 class TaskList(Resource):
+    @jwt_required
     def get(self):
         tasks = TaskModel.query.all()
+        u = get_jwt_identity()
+        print(str(u))
         return task_list_schema.dump(tasks)
     def post(self):
         new_task = TaskModel(

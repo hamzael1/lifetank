@@ -14,8 +14,15 @@ class TaskModel(db.Model):
     def __repr__(self):
         return '<Task %s>' % self.title
 
-def init_db(app):
+def init_db(app, populate_db=False):
     db.init_app(app)
+    if populate_db:
+        with app.app_context():
+            db.create_all()
+            for i in range(10):
+                t = TaskModel( title='Task dev %s' % i)
+                db.session.add(t)
+            db.session.commit()
 
 ####### SCHEMA ########
 
