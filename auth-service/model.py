@@ -18,7 +18,7 @@ class UserModel(db.Model):
         return '<User %s>' % self.username
 
     def generate_hash(passwd):
-        return sha256_crypt.encrypt(passwd)
+        return sha256_crypt.hash(passwd)
 
 
 def init_db(app, populate_db=False):

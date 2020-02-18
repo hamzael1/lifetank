@@ -20,7 +20,7 @@ def populate_db(test_user):
         db.create_all()
         u = UserModel (
                 username=test_user['username'],
-                password=sha256_crypt.encrypt(test_user['password'])
+                password=UserModel.generate_hash(test_user['password'])
             )
         db.session.add(u)
         db.session.commit()
