@@ -1,11 +1,13 @@
 
 from flask_sqlalchemy import SQLAlchemy
-from flask_marshmallow import Marshmallow
+#from flask_marshmallow import Marshmallow
+
+from marshmallow import fields, Schema, validates, ValidationError
 
 from passlib.hash import sha256_crypt
 
 db = SQLAlchemy()
-ma = Marshmallow()
+#ma = Marshmallow()
 
 ####### MODEL ########
 
@@ -33,9 +35,19 @@ def init_db(app, populate_db=False):
 
 ####### SCHEMA ########
 
-class UserSchema(ma.Schema):
-    class Meta:
-        fields = ("id", "username")
+class UserSchema(Schema):
+    id = fields.Integer(dump_only=True)
+    username = fields.Str(required=True)
+    password = fields.Str(required=True, load_only=True)
+
+    @validates('username')
+    def validate_username(self, value):
+        if len(value) < 2:
+            raise ValidationError("Username must be at least 2 charachters long")
+    @validates('password')
+    def validate_password(self, value):
+        if len(value) < 8:
+            raise ValidationError("Password must be at least 8 charachters long")
 
 def init_schema(app):
     ma.init_app(app)

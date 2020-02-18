@@ -35,7 +35,7 @@ def init_db_for_test_session(request, test_user):
     request.addfinalizer(fin)
 
 
-def test_login_success(test_user):
+def test_login__success(test_user):
     """
         TEST POST Request to Login Success case
     """
@@ -53,7 +53,44 @@ def test_login_success(test_user):
     assert 'refresh_token' in resp_body, 'Expected refresh token in response body'
     assert len(resp_body['refresh_token']) > 0, 'Expected refresh token length to be bigger than 0'
 
-def test_login_failure(test_user):
+def test_login__bad_request():
+    """
+        TEST POST Invalid Request to Login
+    """
+    response = requests.post (
+        '{}/login/'.format(ROOT_URL),
+        json = {
+            'username': 'user' # No password !
+        }
+    )
+    assert response.status_code == 400, 'Expecting Invalid Request when no password is provided in Request'
+    raesponse = requests.post (
+        '{}/login/'.format(ROOT_URL),
+        json = {
+            'password': 'passpass' # No username !
+        }
+    )
+    assert response.status_code == 400, 'Expecting Invalid Request when no username is provided in Request'
+
+    response = requests.post (
+        '{}/login/'.format(ROOT_URL),
+        json = {
+            'username': 'user',
+            'password': '123' # Password too small !
+        }
+    )
+    assert response.status_code == 400, 'Expecting Invalid Request when password with lenth < 8 is provided in Request'
+    response = requests.post (
+        '{}/login/'.format(ROOT_URL),
+        json = {
+            'username': 'u', # username too small !
+            'password': 'passpass'
+        }
+    )
+    assert response.status_code == 400, 'Expecting Invalid Request when no username with length < 2 is provided in Request'
+
+
+def test_login__wrong_password(test_user):
     """
         TEST POST Request to Login Failure case
     """

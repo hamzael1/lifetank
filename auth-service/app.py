@@ -1,9 +1,9 @@
 import os
 import sys
 
-from flask import Flask, request
+from flask import Flask, request, abort, jsonify
 
-from model import init_db, init_schema, UserModel
+from model import init_db, init_schema, UserModel, UserSchema
 
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import (create_access_token, 
@@ -43,13 +43,23 @@ def create_app():
 
 app = create_app()
 
-init_schema(app)
+#init_schema(app)
 init_db(app, populate_db=True if CURRENT_ENV == 'DEV' else False)
 jwt = JWTManager(app)
 
+user_schema = UserSchema()
+user_list_schema = UserSchema(many=True)
+
+@app.route('/users/', methods=['GET'])
+def get_users():
+    users = UserModel.query.all()
+    return jsonify(user_list_schema.dump(users))
 
 @app.route('/auth/login/', methods=['POST'])
 def login():
+    validation_errors = user_schema.validate(request.json)
+    if validation_errors:
+        return {'errors': validation_errors}, 400
     req_username = request.json['username']
     res = UserModel.query.filter_by(username=req_username).all()
     if len(res) == 1:
@@ -58,7 +68,6 @@ def login():
         req_password = request.json['password']
         if sha256_crypt.verify(req_password, db_user_password) == True:
             return {
-                'status': 'success',
                 'access_token': create_access_token(identity = {'id': db_user['id'], 'username': db_user['username']} ),
                 'refresh_token': create_refresh_token(identity = {'id': db_user['id'], 'username': db_user['username']} )
                 }, 200
