@@ -10,10 +10,12 @@ from flask_jwt_extended import JWTManager
 def get_current_env():
     if os.getenv('ENV') == 'PROD':
         return 'PROD'
-    elif len(sys.argv) == 2 and sys.argv[1] == 'dev':
+    elif os.getenv('ENV') == 'DEV' or (len(sys.argv) == 2 and sys.argv[1] == 'dev'):
         return 'DEV'
-    else:
+    elif os.getenv('ENV') == 'TEST' or (len(sys.argv) == 2 and sys.argv[1] == 'test'):
         return 'TEST'
+    else:
+        return 'DEV' # default to DEV
 
 CURRENT_ENV = get_current_env()
 
