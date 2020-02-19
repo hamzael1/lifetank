@@ -1,9 +1,9 @@
 
 from flask_sqlalchemy import SQLAlchemy
-from flask_marshmallow import Marshmallow
+from marshmallow import fields, Schema, validates, ValidationError
+
 
 db = SQLAlchemy()
-ma = Marshmallow()
 
 ####### MODEL ########
 
@@ -31,9 +31,17 @@ def init_db(app, populate_db=False):
 
 ####### SCHEMA ########
 
-class TaskSchema(ma.Schema):
-    class Meta:
-        fields = ("id", "user_id", "title")
+class TaskSchema(Schema):
+    id = fields.Integer(dump_only=True)
+    user_id = fields.Integer(required=True)
+    title = fields.Str(required=True)
 
-def init_schema(app):
-    ma.init_app(app)
+    @validates("user_id")
+    def validate_user_id(self, value):
+        if value < 1:
+            raise ValidationError('user_id cant be less than 1')
+    
+    @validates("title")
+    def validate_title(self, value):
+        if len(value) == 0:
+            raise ValidationError('title cant be empty')

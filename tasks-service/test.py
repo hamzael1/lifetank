@@ -81,12 +81,12 @@ def token_user_2(test_user_2):
     return token
 
 @pytest.fixture(scope='function', autouse=False)
-def random_task(test_user_1):
+def random_task_user_1(test_user_1):
     with app.app_context():
-        random_task = TaskModel.query.filter_by(user_id=test_user_1['id']).order_by(func.random()).limit(1).all()[0]
-        return random_task.__dict__
+        random_task_user_1 = TaskModel.query.filter_by(user_id=test_user_1['id']).order_by(func.random()).limit(1).all()[0]
+        return random_task_user_1.__dict__
 
-class TestTasksAPI:
+class TestTasksAPI__SUCCESS:
 
     def test_get_list_of_tasks(self, token_user_1, test_user_1):
         """
@@ -104,18 +104,18 @@ class TestTasksAPI:
             nbr_of_tasks_in_db = len(TaskModel.query.filter_by(user_id=test_user_1['id']).all())
             assert nbr_of_tasks_in_response == nbr_of_tasks_in_db
 
-    def test_get_specific_task(self, token_user_1, random_task):
+    def test_get_specific_task(self, token_user_1, random_task_user_1):
         """
             TEST Get A Specific Task Details from DB belonging to logged user
         """
         with app.app_context():
             response = requests.get(
-                '{}/tasks/{}/'.format(ROOT_URL, random_task['id']),
+                '{}/tasks/{}/'.format(ROOT_URL, random_task_user_1['id']),
                 headers={'Authorization': 'Bearer {}'.format(token_user_1)}
                 )
             assert response.status_code == 200, 'Should get a 200 Code Response. Got a %s instead' % response.status_code
-            assert response.json()['id'] == random_task['id'], 'Expecting ID of retrieved Task to be the same as the one requested'
-            assert response.json()['title'] == random_task['title'], 'Expecting title of retrieved Task to be the same as the one in DB'
+            assert response.json()['id'] == random_task_user_1['id'], 'Expecting ID of retrieved Task to be the same as the one requested'
+            assert response.json()['title'] == random_task_user_1['title'], 'Expecting title of retrieved Task to be the same as the one in DB'
 
     def test_post_new_task(self, token_user_1, test_user_1):
         """
@@ -134,31 +134,133 @@ class TestTasksAPI:
             assert response.json()['title'] == new_task['title'], 'Expecting title of returned object to match title sent in post request'
             assert response.json()['user_id'] == test_user_1['id'], 'Expecting title of returned object to match title sent in post request'
 
-    def test_patch_task(self, token_user_1, random_task):
+    def test_patch_task(self, token_user_1, random_task_user_1):
         """
             TEST PATCH Request to update a Task in DB
         """
         with app.app_context():
             new_title = 'Updated Title of Task'
             response = requests.patch(
-                '{}/tasks/{}/'.format(ROOT_URL, random_task['id']),
+                '{}/tasks/{}/'.format(ROOT_URL, random_task_user_1['id']),
                 headers={'Authorization': 'Bearer {}'.format(token_user_1)},
                 json={ 'title': new_title })
             assert response.status_code == 200, 'Should get a 200 Code Response'
-            updated_task = TaskModel.query.get(random_task['id']).__dict__
+            updated_task = TaskModel.query.get(random_task_user_1['id']).__dict__
             assert updated_task['title'] == new_title, 'Expected to update the new title in DB'
 
-    def test_delete_task(self, token_user_1, random_task):
+    def test_delete_task(self, token_user_1, random_task_user_1):
         """
             TEST DELETE Request to delete a Task from DB
         """
         with app.app_context():
-            user_id = random_task['user_id']
+            user_id = random_task_user_1['user_id']
             pre_nbr_of_tasks_in_db = len(TaskModel.query.filter_by(user_id=user_id).all())
             response = requests.delete(
-                '{}/tasks/{}/'.format(ROOT_URL, random_task['id']),
+                '{}/tasks/{}/'.format(ROOT_URL, random_task_user_1['id']),
                 headers={'Authorization': 'Bearer {}'.format(token_user_1)},
                 )
             assert response.status_code == 204, 'Should get a 201 Code Response'
             nbr_of_tasks_in_db = len(TaskModel.query.filter_by(user_id=user_id).all())
             assert nbr_of_tasks_in_db  == pre_nbr_of_tasks_in_db - 1, 'Expecting number of tasks in DB to decrease by one'
+
+class TestTasksAPI__FAILURE:
+
+    def test_get_specific_task__not_in_db(self, token_user_1):
+        """
+            TEST Get A Specific Task Details which doesnt exist in DB
+        """
+        with app.app_context():
+            wrong_id = 123321123
+            response = requests.get(
+                '{}/tasks/{}/'.format(ROOT_URL, wrong_id),
+                headers={'Authorization': 'Bearer {}'.format(token_user_1)}
+                )
+            assert response.status_code == 404, 'Expecting 404 Response when task id is not in DB'
+
+    def test_post_new_task__invalid_data(self, token_user_1, test_user_1):
+        """
+            TEST POST Request to add a new Task in DB with invalid data
+        """
+        new_task = { 
+            'title': '' # empty title !
+        }
+        with app.app_context():
+            response = requests.post(
+                '{}/tasks/'.format(ROOT_URL),
+                headers={'Authorization': 'Bearer {}'.format(token_user_1)},
+                json=new_task
+                )
+            assert response.status_code == 400, 'Should get a 400 Invalid Code Response when providind empty title'
+        new_task = { 
+            # no title !
+        }
+        with app.app_context():
+            response = requests.post(
+                '{}/tasks/'.format(ROOT_URL),
+                headers={'Authorization': 'Bearer {}'.format(token_user_1)},
+                json=new_task
+                )
+            assert response.status_code == 400, 'Should get a 400 Invalid Code Response when no title is provided'
+
+
+    def test_patch_task__not_in_db(self, token_user_1, random_task_user_1):
+        """
+            TEST PATCH Request to update a Task not in DB ( Wrong Task ID )
+        """
+        with app.app_context():
+            wrong_id = 123321123
+            new_title = 'Updated Title of Task'
+            response = requests.patch(
+                '{}/tasks/{}/'.format(ROOT_URL, wrong_id),
+                headers={'Authorization': 'Bearer {}'.format(token_user_1)},
+                json={ 'title': new_title })
+            assert response.status_code == 404, 'Should get a 404 Code Response when non existing task is provided'
+
+    def test_patch_task__not_belonging_to_logged_user(self, token_user_2, random_task_user_1):
+        """
+            TEST PATCH Request to update a Task in DB Not belonging to logged user
+        """
+        with app.app_context():
+            new_title = 'Updated Title of Task'
+            response = requests.patch(
+                '{}/tasks/{}/'.format(ROOT_URL, random_task_user_1['id']),
+                headers={'Authorization': 'Bearer {}'.format(token_user_2)},
+                json={ 'title': new_title })
+            assert response.status_code == 403, 'Should get a 403 Code Response when trying to patch a task not belonging to logged user'
+
+    def test_patch_task__invalid_request(self, token_user_1, random_task_user_1):
+        """
+            TEST PATCH Request to update a Task with invalid request
+        """
+        with app.app_context():
+            new_title = '' # Empty title
+            response = requests.patch(
+                '{}/tasks/{}/'.format(ROOT_URL, random_task_user_1['id']),
+                headers={'Authorization': 'Bearer {}'.format(token_user_1)},
+                json={ 'title': new_title })
+            assert response.status_code == 400, 'Should get a 400 Code Response when trying to patch a task with empty title'
+
+
+    def test_delete_task__not_in_db(self, token_user_1):
+        """
+            TEST DELETE Request to delete a Task 
+            not belonging to current logged user
+        """
+        wrong_id = 123321123
+        response = requests.delete(
+            '{}/tasks/{}/'.format(ROOT_URL, wrong_id),
+            headers={'Authorization': 'Bearer {}'.format(token_user_1)},
+            )
+        assert response.status_code == 404, 'Should get a 404 Code Response When trying to delete a task not existing in DB'
+
+
+    def test_delete_task__not_belonging_to_logged_user(self, token_user_2, random_task_user_1):
+        """
+            TEST DELETE Request to delete a Task 
+            not belonging to current logged user
+        """
+        response = requests.delete(
+            '{}/tasks/{}/'.format(ROOT_URL, random_task_user_1['id']),
+            headers={'Authorization': 'Bearer {}'.format(token_user_2)},
+            )
+        assert response.status_code == 403, 'Should get a 403 Code Response When trying to delete a task not belonging to logged user'

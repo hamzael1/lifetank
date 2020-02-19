@@ -20,9 +20,17 @@ class TaskList(Resource):
     @jwt_required
     def post(self):
         current_user = get_jwt_identity()
+        task = {
+            'title': request.json['title'] if 'title' in request.json else None,
+            'user_id': current_user['id']
+        }
+        validation_errors = task_single_schema.validate(task)
+        if validation_errors:
+            return {'errors': validation_errors}, '400'
+        
         new_task = TaskModel(
-            title=request.json['title'],
-            user_id=current_user['id']
+            title=task['title'],
+            user_id=task['user_id']
         )
         db.session.add(new_task)
         db.session.commit()
@@ -42,15 +50,21 @@ class TaskSingle(Resource):
 
     @jwt_required
     def patch(self, task_id):
-        current_user = get_jwt_identity()
         task = TaskModel.query.get_or_404(task_id)
 
+        current_user = get_jwt_identity()
         if task.user_id != current_user['id']:
             return {'message': 'Unauthorized'}, '403'
         else:
-            if 'title' in request.json:
-                task.title = request.json['title']
+            request_task = {
+                'title': request.json['title'] if 'title' in request.json else None,
+                'user_id': current_user['id']
+            }
+            validation_errors = task_single_schema.validate(request_task)
+            if validation_errors:
+                return {'errors': validation_errors}, '400'
 
+            task.title = request_task['title']
             db.session.commit()
             return task_single_schema.dump(task), '200'
 
