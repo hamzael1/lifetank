@@ -43,4 +43,11 @@ jwt = JWTManager(app)
 
 ####### RUN APP ########
 if __name__ == '__main__':
-    app.run(debug=False if CURRENT_ENV == 'PROD' else True)
+    DEBUG = False if CURRENT_ENV == 'PROD' else True
+    HOST = '0.0.0.0' if CURRENT_ENV == 'PROD' else '127.0.0.1'
+    PORT = os.getenv('FLASK_RUN_PORT', 5555)
+    app.run(
+        debug=DEBUG,
+        host=HOST,
+        port=PORT
+        )

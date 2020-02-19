@@ -1,11 +1,15 @@
 import pytest
 import requests
-from model import db, UserModel
-from app import app
+from .model import UserModel
+from app import create_app
 
 from passlib.hash import sha256_crypt
 
 ROOT_URL = 'http://localhost:8888/auth'
+
+@pytest.fixture(scope='module', autouse=True)
+def app():
+    return create_app()
 
 @pytest.fixture(scope='session', autouse=False)
 def test_user():
@@ -14,7 +18,7 @@ def test_user():
         'password': 'test_pass'
     }
 
-def populate_db(test_user):
+def populate_db(app, test_user):
     with app.app_context():
         db.drop_all()
         db.create_all()
@@ -26,7 +30,7 @@ def populate_db(test_user):
         db.session.commit()
 
 @pytest.fixture(scope='module', autouse=True)
-def init_db_for_test_session(request, test_user):
+def init_db_for_test_session(request, app, test_user):
     populate_db(test_user)
     def fin():
         pass

@@ -25,11 +25,14 @@ class UserModel(db.Model):
 
 def init_db(app, populate_db=False):
     db.init_app(app)
+    # Create 2 users in DB with same password and ids 1000, 1001
     if populate_db:
         with app.app_context():
             db.drop_all()
             db.create_all()
-            u =  UserModel(username='dev-user', password=UserModel.generate_hash('passpass'))
+            u =  UserModel(id=1000, username='dev-user-1', password=UserModel.generate_hash('passpass'))
+            db.session.add(u)
+            u =  UserModel(id=1001, username='dev-user-2', password=UserModel.generate_hash('passpass'))
             db.session.add(u)
             db.session.commit()
 
