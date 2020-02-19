@@ -22,15 +22,21 @@ class TaskList(Resource):
         current_user = get_jwt_identity()
         task = {
             'title': request.json['title'] if 'title' in request.json else None,
+            'comment': request.json['comment'] if 'comment' in request.json else None,
+            'due': request.json['due'] if 'due' in request.json else None,
+            'done': request.json['done'] if 'done' in request.json else None,
             'user_id': current_user['id']
         }
         validation_errors = task_single_schema.validate(task)
         if validation_errors:
             return {'errors': validation_errors}, '400'
-        
+        task = task_single_schema.load(task)
         new_task = TaskModel(
             title=task['title'],
-            user_id=task['user_id']
+            user_id=task['user_id'],
+            comment=task['comment'],
+            due=task['due'],
+            done=task['done'],
         )
         db.session.add(new_task)
         db.session.commit()
@@ -58,13 +64,19 @@ class TaskSingle(Resource):
         else:
             request_task = {
                 'title': request.json['title'] if 'title' in request.json else None,
+                'comment': request.json['comment'] if 'comment' in request.json else None,
+                'due': request.json['due'] if 'due' in request.json else None,
+                'done': request.json['done'] if 'done' in request.json else None,
                 'user_id': current_user['id']
             }
             validation_errors = task_single_schema.validate(request_task)
             if validation_errors:
                 return {'errors': validation_errors}, '400'
-
+            request_task = task_single_schema.load(request_task)
             task.title = request_task['title']
+            task.comment = request_task['comment']
+            task.due = request_task['due']
+            task.done = request_task['done']
             db.session.commit()
             return task_single_schema.dump(task), '200'
 

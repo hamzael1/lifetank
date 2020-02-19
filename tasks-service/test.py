@@ -5,6 +5,9 @@ from sqlalchemy.sql.expression import func
 from app import app
 from model import db, TaskModel
 
+from datetime import datetime
+from random import random as rand, randrange
+
 ROOT_URL='http://localhost:5000'
 
 LOGIN_URL='http://localhost:8888/auth/login/'
@@ -35,14 +38,20 @@ def populate_db(user_1_id, user_2_id):
         for i in range(NBR_TASKS_PER_USER):
             t = TaskModel (
                     title='Task Test {}'.format(i+1),
-                    user_id=user_1_id
+                    user_id=user_1_id,
+                    comment='Comment for Task Test {}'.format(i+1),
+                    done=True if rand() > 0.5 else False,
+                    due=datetime(2020,randrange(2,6), randrange(1,26))
                 )
             db.session.add(t)
         db.session.commit()
         for i in range(NBR_TASKS_PER_USER):
             t = TaskModel (
                     title='Task Test {}'.format(i+1),
-                    user_id=user_2_id
+                    user_id=user_1_id,
+                    comment='Comment for Task Test {}'.format(i+1),
+                    done=True if rand() > 0.5 else False,
+                    due=datetime(2020,randrange(2,6), randrange(1,26))
                 )
             db.session.add(t)
         db.session.commit()
@@ -113,26 +122,33 @@ class TestTasksAPI__SUCCESS:
                 '{}/tasks/{}/'.format(ROOT_URL, random_task_user_1['id']),
                 headers={'Authorization': 'Bearer {}'.format(token_user_1)}
                 )
+            resp_body = response.json()
             assert response.status_code == 200, 'Should get a 200 Code Response. Got a %s instead' % response.status_code
-            assert response.json()['id'] == random_task_user_1['id'], 'Expecting ID of retrieved Task to be the same as the one requested'
-            assert response.json()['title'] == random_task_user_1['title'], 'Expecting title of retrieved Task to be the same as the one in DB'
+            assert resp_body['id'] == random_task_user_1['id'], 'Expecting ID of retrieved Task to be the same as the one requested'
+            assert resp_body['title'] == random_task_user_1['title'], 'Expecting title of retrieved Task to be the same as the one in DB'
+            assert 'created' in resp_body, 'Expecting created field to show in dump'
 
     def test_post_new_task(self, token_user_1, test_user_1):
         """
             TEST POST Request to add a new Task in DB
         """
-        new_task = { 'title': 'New Task Test'}
+        new_task = { 
+            'title': 'New Task Test',
+            'comment': 'Comment for new Task',
+            'due': datetime(2020,4,22).isoformat(),
+            'done': False
+        }
         with app.app_context():
             nbr_of_tasks_in_db = len(TaskModel.query.filter_by(user_id=test_user_1['id']).all())
             response = requests.post(
                 '{}/tasks/'.format(ROOT_URL),
                 headers={'Authorization': 'Bearer {}'.format(token_user_1)},
-                json={ 'title': new_task['title'] }
+                json=new_task
                 )
             assert response.status_code == 201, 'Should get a 201 Code Response'
             assert nbr_of_tasks_in_db + 1 == len(TaskModel.query.filter_by(user_id=test_user_1['id']).all()) , 'Expecting number of tasks in DB to increase by one'
             assert response.json()['title'] == new_task['title'], 'Expecting title of returned object to match title sent in post request'
-            assert response.json()['user_id'] == test_user_1['id'], 'Expecting title of returned object to match title sent in post request'
+            assert response.json()['user_id'] == test_user_1['id'], 'Expecting user_id of returned object to match user_id of logged user'
 
     def test_patch_task(self, token_user_1, random_task_user_1):
         """
@@ -140,10 +156,16 @@ class TestTasksAPI__SUCCESS:
         """
         with app.app_context():
             new_title = 'Updated Title of Task'
-            response = requests.patch(
+            updated_task = {
+                'title' : new_title,
+                'comment': 'New Comment for new Task',
+                'due': datetime(2020,4,22).isoformat(),
+                'done': True
+            }
+            response = requests.patch (
                 '{}/tasks/{}/'.format(ROOT_URL, random_task_user_1['id']),
                 headers={'Authorization': 'Bearer {}'.format(token_user_1)},
-                json={ 'title': new_title })
+                json=updated_task )
             assert response.status_code == 200, 'Should get a 200 Code Response'
             updated_task = TaskModel.query.get(random_task_user_1['id']).__dict__
             assert updated_task['title'] == new_title, 'Expected to update the new title in DB'
