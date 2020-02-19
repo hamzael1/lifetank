@@ -4,7 +4,7 @@ import sys
 from flask import Flask
 
 from routes import init_api 
-from model import init_db, init_schema
+from model import init_db
 from flask_jwt_extended import JWTManager
 
 def get_current_env():
@@ -36,7 +36,6 @@ def create_app():
 app = create_app()
 
 init_api(app)
-init_schema(app)
 init_db(app, populate_db=True if CURRENT_ENV == 'DEV' else False)
 jwt = JWTManager(app)
 

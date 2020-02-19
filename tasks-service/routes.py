@@ -13,13 +13,30 @@ task_list_schema = TaskSchema(many=True)
 class TaskList(Resource):
     @jwt_required
     def get(self):
-        tasks = TaskModel.query.all()
-        u = get_jwt_identity()
-        print(str(u))
+        current_user = get_jwt_identity()
+        tasks = TaskModel.query.filter_by(user_id=current_user['id']).all() # Get Tasks of user
         return task_list_schema.dump(tasks)
+    
+    @jwt_required
     def post(self):
+        current_user = get_jwt_identity()
+        task = {
+            'title': request.json['title'] if 'title' in request.json else None,
+            'comment': request.json['comment'] if 'comment' in request.json else None,
+            'due': request.json['due'] if 'due' in request.json else None,
+            'done': request.json['done'] if 'done' in request.json else None,
+            'user_id': current_user['id']
+        }
+        validation_errors = task_single_schema.validate(task)
+        if validation_errors:
+            return {'errors': validation_errors}, '400'
+        task = task_single_schema.load(task)
         new_task = TaskModel(
-            title=request.json['title'],
+            title=task['title'],
+            user_id=task['user_id'],
+            comment=task['comment'],
+            due=task['due'],
+            done=task['done'],
         )
         db.session.add(new_task)
         db.session.commit()
@@ -27,24 +44,52 @@ class TaskList(Resource):
 
 
 class TaskSingle(Resource):
+    @jwt_required
     def get(self, task_id):
+        current_user = get_jwt_identity()
         task = TaskModel.query.get_or_404(task_id)
-        return task_single_schema.dump(task), '200'
 
+        if task.user_id != current_user['id']:
+            return {'message': 'Unauthorized'}, '403'
+        else:
+            return task_single_schema.dump(task), '200'
+
+    @jwt_required
     def patch(self, task_id):
         task = TaskModel.query.get_or_404(task_id)
 
-        if 'title' in request.json:
-            task.title = request.json['title']
+        current_user = get_jwt_identity()
+        if task.user_id != current_user['id']:
+            return {'message': 'Unauthorized'}, '403'
+        else:
+            request_task = {
+                'title': request.json['title'] if 'title' in request.json else None,
+                'comment': request.json['comment'] if 'comment' in request.json else None,
+                'due': request.json['due'] if 'due' in request.json else None,
+                'done': request.json['done'] if 'done' in request.json else None,
+                'user_id': current_user['id']
+            }
+            validation_errors = task_single_schema.validate(request_task)
+            if validation_errors:
+                return {'errors': validation_errors}, '400'
+            request_task = task_single_schema.load(request_task)
+            task.title = request_task['title']
+            task.comment = request_task['comment']
+            task.due = request_task['due']
+            task.done = request_task['done']
+            db.session.commit()
+            return task_single_schema.dump(task), '200'
 
-        db.session.commit()
-        return task_single_schema.dump(task), '200'
-
+    @jwt_required
     def delete(self, task_id):
+        current_user = get_jwt_identity()
         task = TaskModel.query.get_or_404(task_id)
-        db.session.delete(task)
-        db.session.commit()
-        return '', '204'
+        if task.user_id != current_user['id']:
+            return {'message': 'Unauthorized'}, '403'
+        else:
+            db.session.delete(task)
+            db.session.commit()
+            return '', '204'
 
 def init_api(app):
     api = Api(app)
