@@ -12,6 +12,8 @@ db = SQLAlchemy()
 ####### MODEL ########
 
 class UserModel(db.Model):
+    __tablename__ = 'users'
+
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64))
     password = db.Column(db.String(254))
@@ -23,18 +25,6 @@ class UserModel(db.Model):
         return sha256_crypt.hash(passwd)
 
 
-def init_db(app, populate_db=False):
-    db.init_app(app)
-    # Create 2 users in DB with same password and ids 1000, 1001
-    if populate_db:
-        with app.app_context():
-            db.drop_all()
-            db.create_all()
-            u =  UserModel(id=1000, username='dev-user-1', password=UserModel.generate_hash('passpass'))
-            db.session.add(u)
-            u =  UserModel(id=1001, username='dev-user-2', password=UserModel.generate_hash('passpass'))
-            db.session.add(u)
-            db.session.commit()
 
 ####### SCHEMA ########
 
@@ -55,19 +45,20 @@ class UserSchema(Schema):
 
 ###############
 
-def init_db(app, populate_db=False):
+def init_db(app, populate_db_param=False):
+    db.init_app(app)
+
+
+def populate_db(app, nbr_rows=3, password='passpass'):
     """
         Create two users in DB: 
-            1000 dev-user-1 passpass
-            1001 dev-user-2 passpass
+            dev-user-1 passpass
+            dev-user-2 passpass
     """
-    db.init_app(app)
-    if populate_db:
-        with app.app_context():
-            db.drop_all()
-            db.create_all()
-            u =  UserModel(id=1000, username='test_user_1', password=UserModel.generate_hash('test_pass'))
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
+        for i in range(nbr_rows):
+            u =  UserModel( username='dev-user-{}'.format(i+1), password=UserModel.generate_hash(password))
             db.session.add(u)
-            u =  UserModel(id=1001, username='test_user_2', password=UserModel.generate_hash('test_pass'))
-            db.session.add(u)
-            db.session.commit()
+        db.session.commit()

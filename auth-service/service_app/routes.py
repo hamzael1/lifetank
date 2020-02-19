@@ -9,7 +9,7 @@ from flask_jwt_extended import (create_access_token,
 from passlib.hash import sha256_crypt
 
 
-from .model import init_schema, UserModel, UserSchema
+from .model import UserModel, UserSchema
 
 import datetime
 
