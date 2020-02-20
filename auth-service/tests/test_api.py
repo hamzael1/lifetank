@@ -1,38 +1,11 @@
+
 import pytest
-from  sqlalchemy.sql.expression import func
 
-from .model import UserModel, populate_db
-from .app import create_app
+from service_app.model import UserModel
 
-from passlib.hash import sha256_crypt
-
-import random
+from conftest import TEST_USERS
 
 ROOT_URL = '/auth'
-
-NBR_TEST_USERS = 3
-TEST_USERS = [
-    {
-        'username': 'test_user_{}'.format(i+1),
-        'password': 'passpass'
-    } for i in range(NBR_TEST_USERS)
-]
-
-@pytest.fixture(scope='module', autouse=False)
-def app():
-    app = create_app(testing=True)
-    populate_db(app, TEST_USERS)
-    return app
-
-@pytest.fixture(scope='function', autouse=False)
-def random_test_user(app):
-    return random.choice(TEST_USERS)
-
-
-@pytest.fixture(scope='module', autouse=False)
-def app_client(app):
-    return app.test_client()
-
 
 def test_dummy(app_client):
     response = app_client.get('{}/'.format(ROOT_URL))
