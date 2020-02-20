@@ -14,6 +14,10 @@ def init_routes(app):
     task_single_schema = TaskSchema()
     task_list_schema = TaskSchema(many=True)
 
+    @app.route('/tasks/dummy', methods=['GET'])
+    def dummy():
+        return {'message': 'Working'}, 200
+
     # Api Routes
     class TaskList(Resource):
         @jwt_required
@@ -96,5 +100,5 @@ def init_routes(app):
                 db.session.commit()
                 return '', '204'
 
-    api.add_resource(TaskList, '/tasks/')
+    api.add_resource(TaskList, '/tasks')
     api.add_resource(TaskSingle,'/tasks/<string:task_id>/')

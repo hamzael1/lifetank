@@ -11,6 +11,7 @@ import random
 NBR_TEST_USERS = 3
 TEST_USERS = [
     {
+        'id': 1000+i,
         'username': 'test_user_{}'.format(i+1),
         'password': 'passpass'
     } for i in range(NBR_TEST_USERS)

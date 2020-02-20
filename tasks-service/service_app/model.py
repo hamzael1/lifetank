@@ -2,7 +2,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from marshmallow import fields, Schema, validates, ValidationError
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from random import random as rand, randrange, choice
 
@@ -53,7 +53,7 @@ def init_db(app):
     db.init_app(app)
 
 
-def populate_db(app, nbr_tasks=10, user_ids=[1000,1001]):
+def populate_db(app, user_ids=[1000,1001], nbr_tasks_per_user=5):
     """
         Populate DB with "nbr_tasks" tasks
     """
@@ -61,13 +61,15 @@ def populate_db(app, nbr_tasks=10, user_ids=[1000,1001]):
     with app.app_context():
         db.drop_all()
         db.create_all()
-        for i in range(nbr_tasks):
-            t =  TaskModel( 
-                user_id=choice(user_ids),
-                title='Task Title Dev {}'.format(i),
-                comment='Comment for Task Dev {}'.format(i),
-                due=datetime(2020, randrange(1,12), randrange(1,27)),
-                done=True if rand() > 0.5 else False
-                )
-            db.session.add(t)
+        today = datetime.today()
+        for uid in user_ids:
+            for i in range(nbr_tasks_per_user):
+                t =  TaskModel( 
+                    user_id=uid,
+                    title='Task Title {}'.format(i),
+                    comment='Comment for Task {}'.format(i),
+                    due=today + timedelta(days=randrange(1,100)),
+                    done=True if rand() > 0.5 else False
+                    )
+                db.session.add(t)
         db.session.commit()
