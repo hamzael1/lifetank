@@ -60,7 +60,8 @@ def populate_db(app, users):
         db.drop_all()
         db.create_all()
         for u in users:
-            u =  UserModel( 
+            u =  UserModel(
+                id=u['id'],
                 username=u['username'],
                 password=UserModel.generate_hash(u['password']))
             db.session.add(u)

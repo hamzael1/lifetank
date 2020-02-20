@@ -4,12 +4,16 @@ from marshmallow import fields, Schema, validates, ValidationError
 
 from datetime import datetime
 
-from random import random as rand, randrange
+from random import random as rand, randrange, choice
+
+
 db = SQLAlchemy()
 
 ####### MODEL ########
 
 class TaskModel(db.Model):
+    __tablename__ = 'tasks'
+
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, nullable=False)
     title = db.Column(db.String(64), nullable=False)
@@ -21,37 +25,9 @@ class TaskModel(db.Model):
     def __repr__(self):
         return '<Task %s>' % self.title
 
-def init_db(app, populate_db=False):
-    db.init_app(app)
-    if populate_db:
-        with app.app_context():
-            db.drop_all()
-            db.create_all()
-            for i in range(5):
-                t = TaskModel( 
-                    title='Task Test {}'.format(i+1),
-                    user_id=1000,
-                    comment='Comment for Task Test {}'.format(i+1),
-                    done=True if rand() > 0.5 else False,
-                    due=datetime(2020,randrange(2,6), randrange(1,26))
-                )
-                db.session.add(t)
-            for i in range(5):
-                t = TaskModel( 
-                    title='Task Test {}'.format(i+1),
-                    user_id=1001,
-                    comment='Comment for Task Test {}'.format(i+1),
-                    done=True if rand() > 0.5 else False,
-                    due=datetime(2020,randrange(2,6), randrange(1,26))
-                )
-                db.session.add(t)
-            db.session.commit()
-
 ####### SCHEMA ########
 
 class TaskSchema(Schema):
-    __tablename__ = 'tasks'
-
     id = fields.Integer(dump_only=True)
     user_id = fields.Integer(required=True)
     title = fields.Str(required=True)
@@ -69,3 +45,29 @@ class TaskSchema(Schema):
     def validate_title(self, value):
         if len(value) == 0:
             raise ValidationError('title cant be empty')
+
+
+####### FUNCTIONS ########
+
+def init_db(app):
+    db.init_app(app)
+
+
+def populate_db(app, nbr_tasks=10, user_ids=[1000,1001]):
+    """
+        Populate DB with "nbr_tasks" tasks
+    """
+    print('Populating ...')
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
+        for i in range(nbr_tasks):
+            t =  TaskModel( 
+                user_id=choice(user_ids),
+                title='Task Title Dev {}'.format(i),
+                comment='Comment for Task Dev {}'.format(i),
+                due=datetime(2020, randrange(1,12), randrange(1,27)),
+                done=True if rand() > 0.5 else False
+                )
+            db.session.add(t)
+        db.session.commit()

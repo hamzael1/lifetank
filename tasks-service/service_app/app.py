@@ -21,14 +21,7 @@ def create_app(testing=False):
     init_db(app)
     # Populate DB with some dummy users if in dev environment
     if app.config['ENV'] == 'development' and not testing:
-        users_to_create = [
-            {
-                'id': 1000+i,
-                'username': 'dev_user_{}'.format(i+1),
-                'password': 'passpass'
-            } for i in range(2)
-        ]
-        populate_db(app, users_to_create)
+        populate_db(app, nbr_tasks=10)
 
     
     # Init Routes
