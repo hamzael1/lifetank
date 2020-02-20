@@ -7,7 +7,6 @@ from marshmallow import fields, Schema, validates, ValidationError
 from passlib.hash import sha256_crypt
 
 db = SQLAlchemy()
-#ma = Marshmallow()
 
 ####### MODEL ########
 
@@ -43,22 +42,26 @@ class UserSchema(Schema):
             raise ValidationError("Password must be at least 8 charachters long")
 
 
-###############
+####### FUNCTIONS ########
 
 def init_db(app, populate_db_param=False):
     db.init_app(app)
 
 
-def populate_db(app, nbr_rows=3, password='passpass'):
+def populate_db(app, users):
     """
-        Create two users in DB: 
-            dev-user-1 passpass
-            dev-user-2 passpass
+        Create users.
+        [
+            { 'username': ..., 'password': ... }, 
+            { 'username': ..., 'password': ... }, 
+        ]
     """
     with app.app_context():
         db.drop_all()
         db.create_all()
-        for i in range(nbr_rows):
-            u =  UserModel( username='dev-user-{}'.format(i+1), password=UserModel.generate_hash(password))
+        for u in users:
+            u =  UserModel( 
+                username=u['username'],
+                password=UserModel.generate_hash(u['password']))
             db.session.add(u)
         db.session.commit()

@@ -20,11 +20,11 @@ def init_routes(app):
     user_schema = UserSchema()
     user_list_schema = UserSchema(many=True)
 
-    # TODO: REMOVE !
-    @app.route('/users/', methods=['GET'])
-    def get_users():
-        users = UserModel.query.all()
-        return jsonify(user_list_schema.dump(users))
+    # Dummy Endpoint for test
+    @app.route('/auth/', methods=['GET'])
+    def dummy():
+        return {'message': 'Please Login'}, 200
+
 
     @app.route('/auth/login/', methods=['POST'])
     def login():
