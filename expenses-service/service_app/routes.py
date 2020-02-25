@@ -99,4 +99,4 @@ def init_routes(app):
             return '', '204'
 
     api.add_resource(ExpenseList, '/')
-    api.add_resource(ExpenseSingle,'/<string:expense_id>/')
+    api.add_resource(ExpenseSingle,'/<string:expense_id>')

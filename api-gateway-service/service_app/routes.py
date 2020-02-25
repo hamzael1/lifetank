@@ -53,14 +53,24 @@ def init_routes(app):
     EXPENSES_SERVICE_HOST = 'localhost'
     EXPENSES_SERVICE_PORT = '5555'
     EXPENSES_SERVICE_URL = 'http://{}:{}'.format(EXPENSES_SERVICE_HOST, EXPENSES_SERVICE_PORT)
-    @app.route('/expenses/', methods=['GET', 'POST'])
+    @app.route('/expenses', methods=['GET', 'POST'])
+    @app.route('/expenses/<string:expense_id>', methods=['GET', 'PATCH', 'DELETE'])
     @jwt_required
-    def expenses():
+    def expenses(expense_id=None):
         current_user = get_jwt_identity()
-        # perform authorization stuff  
-        forward_url = '{}/?{}'.format( EXPENSES_SERVICE_URL, request.url.split('?')[1]) 
-        # return forward_url, '200'
+        # perform authorization stuff
+        params_array = []
+        if expense_id is None:
+            for param, value in request.args.items():
+                params_array.append('{}={}'.format(param, value))
+            params_str = '&'.join(params_array)
+            forward_url = '{}/?{}'.format( EXPENSES_SERVICE_URL, params_str) 
+        else:
+            forward_url = '{}/{}'.format (EXPENSES_SERVICE_URL, expense_id)
+        #print(forward_url)
         resp = requests.request(request.method, url=forward_url, json=request.json)
-        #resp_body = resp.get_json()
-        #print(resp_body)
-        return resp.content, resp.status_code
+        
+        return make_response(
+                jsonify(resp.json()) if len(resp.content) > 0 else '',
+                resp.status_code
+            )
