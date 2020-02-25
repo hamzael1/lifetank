@@ -88,4 +88,4 @@ def init_routes(app):
             return '', '204'
 
     api.add_resource(TaskList, '/')
-    api.add_resource(TaskSingle,'/<string:task_id>/')
+    api.add_resource(TaskSingle,'/<string:task_id>')

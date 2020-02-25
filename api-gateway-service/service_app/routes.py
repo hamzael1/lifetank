@@ -74,3 +74,28 @@ def init_routes(app):
                 jsonify(resp.json()) if len(resp.content) > 0 else '',
                 resp.status_code
             )
+
+    TASKS_SERVICE_HOST = 'localhost'
+    TASKS_SERVICE_PORT = '2222'
+    TASKS_SERVICE_URL = 'http://{}:{}'.format(TASKS_SERVICE_HOST, TASKS_SERVICE_PORT)
+    @app.route('/tasks', methods=['GET', 'POST'])
+    @app.route('/tasks/<string:task_id>', methods=['GET', 'PATCH', 'DELETE'])
+    @jwt_required
+    def tasks(task_id=None):
+        current_user = get_jwt_identity()
+        # perform authorization stuff
+        params_array = []
+        if task_id is None:
+            for param, value in request.args.items():
+                params_array.append('{}={}'.format(param, value))
+            params_str = '&'.join(params_array)
+            forward_url = '{}/?{}'.format( TASKS_SERVICE_URL, params_str) 
+        else:
+            forward_url = '{}/{}'.format (TASKS_SERVICE_URL, task_id)
+        #print(forward_url)
+        resp = requests.request(request.method, url=forward_url, json=request.json)
+        
+        return make_response(
+                jsonify(resp.json()) if len(resp.content) > 0 else '',
+                resp.status_code
+            )
