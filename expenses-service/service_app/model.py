@@ -17,6 +17,7 @@ class ExpenseModel(db.Model):
     EXPENSE_CATEGORIES = ['RESTAURANT', 'CAFE', 'STUDY', 'ENTERTAINMENT', 'FOOD', 'MATERIAL', 'WORK']
 
     id = db.Column(db.Integer, primary_key=True)
+    owner_user_id = db.Column(db.Integer, nullable=False)
     task_id = db.Column(db.Integer, nullable=True)
     amount = db.Column(db.Integer, nullable=False)
     title = db.Column(db.String(64), nullable=False)
@@ -32,6 +33,7 @@ class ExpenseModel(db.Model):
 
 class ExpenseSchema(Schema):
     id = fields.Integer(dump_only=True)
+    owner_user_id = fields.Integer(required=True)
     task_id = fields.Integer(required=True)
     amount = fields.Integer(required=True)
     title = fields.Str(required=True)
@@ -39,6 +41,11 @@ class ExpenseSchema(Schema):
     date = fields.DateTime(required=True, format='iso')
     category = fields.Str(required=True)
     created = fields.DateTime(dump_only=True, format='iso')
+
+    @validates("owner_user_id")
+    def validate_owner_user_id(self, value):
+        if value < 1:
+            raise ValidationError('owner_user_id cant be less than 1')
 
     @validates("task_id")
     def validate_task_id(self, value):
@@ -72,8 +79,9 @@ def populate_db(app, expenses_to_add=[]):
         db.create_all()
         today = datetime.today()
         for e in expenses_to_add:
-            print(str(e))
+            #print(str(e))
             t =  ExpenseModel( 
+                owner_user_id=e['owner_user_id'],
                 task_id=e['task_id'],
                 amount=e['amount'],
                 title=e['title'],

@@ -9,8 +9,10 @@ from random import choice, randrange
 from datetime import datetime, timedelta
 
 NBR_TEST_EXPENSES_PER_TASK = 14
-NBR_TASKS = 10
-TEST_TASKS_IDS = [ (i+1) for i in range(NBR_TASKS) ]
+NBR_TEST_TASKS = 10
+NBR_TEST_USERS = 5
+TEST_TASKS_IDS = [ randrange(1,1000) for _ in range(NBR_TEST_TASKS) ]
+TEST_USER_IDS = [ randrange(1,1000) for _ in range(NBR_TEST_USERS) ]
 
 TODAY = datetime.today()
 TEST_EXPENSES = []
@@ -24,6 +26,7 @@ for tid in TEST_TASKS_IDS:
                 'category': choice(ExpenseModel.EXPENSE_CATEGORIES),
                 'amount': randrange(1,1000),
                 'date':TODAY + timedelta(days=randrange(1,100)),
+                'owner_user_id': choice(TEST_USER_IDS), 
                 'task_id': tid
             } for i in range(NBR_TEST_EXPENSES_PER_TASK) ] 
         )
@@ -52,3 +55,12 @@ def wrong_expense_id(app):
         while ExpenseModel.query.get(id) != None:
             id += randrange(100,600)
         return id
+
+@pytest.fixture(scope='function', autouse=False)
+def random_task_id():
+    return choice(TEST_TASKS_IDS)
+
+@pytest.fixture(scope='function', autouse=False)
+def random_user_id():
+    return choice(TEST_USER_IDS)
+

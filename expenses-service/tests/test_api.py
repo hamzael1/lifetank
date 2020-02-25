@@ -6,9 +6,9 @@ from service_app.model import db, ExpenseModel
 from datetime import datetime, timedelta
 from random import random as rand, randrange, choice, choices
 
-from conftest import NBR_TEST_EXPENSES_PER_TASK, TEST_TASKS_IDS, TODAY
+from conftest import NBR_TEST_EXPENSES_PER_TASK, TEST_USER_IDS, TEST_TASKS_IDS, TODAY
 
-ROOT_URL = '/expenses'
+ROOT_URL = ''
 
 def test_dummy(app_client):
     response = app_client.get('{}/dummy'.format(ROOT_URL))
@@ -18,21 +18,32 @@ def test_dummy(app_client):
 
 class TestExpensesAPI__GetExpenses:
 
-    def test_get_list_of_expenses(self, app_client):
+    def test_get_list_of_expenses_by_task_id__success(self, app, app_client, random_task_id):
         """
-            TEST GET Request to get Expenses of task ids specified in json body
+            TEST GET Request to get Expenses of a specfic task_id specified in URL param
         """
-        nbr_tasks = randrange(1, len(TEST_TASKS_IDS))
-        task_ids = list(set(choices(TEST_TASKS_IDS, k=nbr_tasks)))
-        nbr_tasks = len(task_ids)
         response = app_client.get(
-            '{}'.format(ROOT_URL),
-            json={'task_ids': task_ids},
+            '{}/?task_id={}'.format(ROOT_URL, random_task_id)
         )
         assert response.status_code == 200
+        nbr_of_expenses_in_response = len(response.get_json()) 
+        with app.app_context():
+            nbr_of_expenses_of_user_in_db = ExpenseModel.query.filter_by(task_id=random_task_id).count()
+            assert nbr_of_expenses_in_response ==  nbr_of_expenses_of_user_in_db
 
-        nbr_of_expenses_in_response = len(response.get_json())    
-        assert nbr_of_expenses_in_response ==  NBR_TEST_EXPENSES_PER_TASK*nbr_tasks
+    def test_get_list_of_expenses_by_owner__success(self, app, app_client, random_user_id):
+        """
+            TEST GET Request to get Expenses of a specfic user specified in URL param
+        """
+        response = app_client.get(
+            '{}/?owner={}'.format(ROOT_URL, random_user_id)
+        )
+        assert response.status_code == 200
+        nbr_of_expenses_in_response = len(response.get_json())
+        with app.app_context():
+            nbr_of_expenses_of_user_in_db = ExpenseModel.query.filter_by(owner_user_id=random_user_id).count()
+            assert nbr_of_expenses_in_response ==  nbr_of_expenses_of_user_in_db
+
 
     def test_get_specific_expense(self, app_client, random_expense):
         """
@@ -56,36 +67,38 @@ class TestExpensesAPI__GetExpenses:
         assert response.status_code == 404, 'Expecting 404 Response when expense id is not in DB'
 
 
+
 INVALID_EXPENSES = [
-    ( { 'title': '', 'comment': 'comment', 'category': choice(ExpenseModel.EXPENSE_CATEGORIES), 'amount': randrange(1,1000), 'date':TODAY + timedelta(days=randrange(1,100)), 'task_id': choice(TEST_TASKS_IDS) }, 'no title is provided' ),
-    ( { 'title': 'title', 'comment': 'comment', 'category': '', 'amount': randrange(1,1000), 'date':TODAY + timedelta(days=randrange(1,100)), 'task_id': choice(TEST_TASKS_IDS) }, 'category is empty' ),
-    ( { 'title': 'title', 'comment': 'comment', 'category': choice(ExpenseModel.EXPENSE_CATEGORIES), 'amount': 0, 'date':TODAY + timedelta(days=randrange(1,100)), 'task_id': choice(TEST_TASKS_IDS) }, 'amount is zero' ),
-    ( { 'title': 'title', 'comment': 'comment', 'category': choice(ExpenseModel.EXPENSE_CATEGORIES), 'amount': 0, 'task_id': choice(TEST_TASKS_IDS) }, 'no date is provided' ),
+    ( { 'owner_user_id': choice(TEST_USER_IDS), 'title': '', 'comment': 'comment', 'category': choice(ExpenseModel.EXPENSE_CATEGORIES), 'amount': randrange(1,1000), 'date':TODAY + timedelta(days=randrange(1,100)), 'task_id': choice(TEST_TASKS_IDS) }, 'no title is provided' ),
+    ( { 'owner_user_id': choice(TEST_USER_IDS), 'title': 'title', 'comment': 'comment', 'category': '', 'amount': randrange(1,1000), 'date':TODAY + timedelta(days=randrange(1,100)), 'task_id': choice(TEST_TASKS_IDS) }, 'category is empty' ),
+    ( { 'owner_user_id': choice(TEST_USER_IDS), 'title': 'title', 'comment': 'comment', 'category': choice(ExpenseModel.EXPENSE_CATEGORIES), 'amount': 0, 'date':TODAY + timedelta(days=randrange(1,100)), 'task_id': choice(TEST_TASKS_IDS) }, 'amount is zero' ),
+    ( { 'owner_user_id': choice(TEST_USER_IDS), 'title': 'title', 'comment': 'comment', 'category': choice(ExpenseModel.EXPENSE_CATEGORIES), 'amount': 0, 'task_id': choice(TEST_TASKS_IDS) }, 'no date is provided' ),
+    ( { 'owner_user_id': 0, 'title': 'tltle', 'comment': 'comment', 'category': choice(ExpenseModel.EXPENSE_CATEGORIES), 'amount': randrange(1,1000), 'date':TODAY + timedelta(days=randrange(1,100)), 'task_id': choice(TEST_TASKS_IDS) }, 'no owner user id is provided' ),
 ]
 
 class TestExpensesAPI__PostExpense:
 
-    def test_post_new_expense__success(self, app, app_client):
+    def test_post_new_expense__success(self, app, app_client, random_task_id, random_user_id):
         """
             TEST POST Request to add a new Expense in DB
         """
         new_expense = {
-                'title': 'title for expense',
+                'title': 'title for new expense',
                 'comment': 'comment for expense',
                 'category': choice(ExpenseModel.EXPENSE_CATEGORIES),
                 'amount': randrange(1,1000),
                 'date': (TODAY + timedelta(days=randrange(1,100))).isoformat(),
-                'task_id': choice(TEST_TASKS_IDS)
-            }
+                'owner_user_id': random_user_id,
+                'task_id': random_task_id
+        }
         with app.app_context():
-            nbr_of_expenses_in_db = len(ExpenseModel.query.all())
+            nbr_of_expenses_in_db_pre = ExpenseModel.query.count()
             response = app_client.post(
-                '{}'.format(ROOT_URL),
-                json=new_expense
-                )
-            print(response.get_json())
+                    '{}/'.format(ROOT_URL),
+                    json=new_expense
+            )
             assert response.status_code == 201, 'Should get a 201 Code Response'
-            assert nbr_of_expenses_in_db + 1 == len(ExpenseModel.query.all()) , 'Expecting number of expenses in DB to increase by one'
+            assert nbr_of_expenses_in_db_pre + 1 == ExpenseModel.query.count() , 'Expecting number of expenses in DB to increase by one'
             resp_body = response.get_json()
             assert resp_body['title'] == new_expense['title'], 'Expecting title of returned object to match title sent in post request'
 
@@ -95,7 +108,7 @@ class TestExpensesAPI__PostExpense:
             TEST POST Request to add a new Expense in DB with invalid data
         """
         response = app_client.post(
-            '{}'.format(ROOT_URL),
+            '{}/'.format(ROOT_URL),
             json=invalid_new_expense
             )
         assert response.status_code == 400, 'Expecting to get a 400 Invalid Request when {}'.format(expected_str)
@@ -103,7 +116,7 @@ class TestExpensesAPI__PostExpense:
 
 class TestExpensesAPI__UpdateExpense:
     
-    def test_patch_expense__success(self, app, app_client, random_expense):
+    def test_patch_expense__success(self, app, app_client, random_expense, random_task_id, random_user_id):
         """
             TEST PATCH Request to update a Expense in DB
         """
@@ -115,7 +128,8 @@ class TestExpensesAPI__UpdateExpense:
                 'category': choice(ExpenseModel.EXPENSE_CATEGORIES),
                 'amount': randrange(1,1000),
                 'date': (TODAY + timedelta(days=randrange(1,100))).isoformat(),
-                'task_id': choice(TEST_TASKS_IDS)
+                'owner_user_id': random_user_id,
+                'task_id': random_task_id
             }
             response = app_client.patch (
                 '{}/{}/'.format(ROOT_URL, random_expense['id']),
@@ -124,7 +138,7 @@ class TestExpensesAPI__UpdateExpense:
             updated_expense = ExpenseModel.query.get(random_expense['id']).__dict__
             assert updated_expense['title'] == new_title, 'Expected to update the new title in DB'
 
-    def test_patch_expense__not_in_db(self, app_client, wrong_expense_id):
+    def test_patch_expense__not_in_db(self, app_client, wrong_expense_id, random_task_id, random_user_id):
         """
             TEST PATCH Request to update a Expense not in DB ( Wrong Expense ID )
         """
@@ -134,7 +148,8 @@ class TestExpensesAPI__UpdateExpense:
                 'category': choice(ExpenseModel.EXPENSE_CATEGORIES),
                 'amount': randrange(1,1000),
                 'date': (TODAY + timedelta(days=randrange(1,100))).isoformat(),
-                'task_id': choice(TEST_TASKS_IDS)
+                'owner_user_id': random_user_id,
+                'task_id': random_task_id
             }
         response = app_client.patch(
             '{}/{}/'.format(ROOT_URL, wrong_expense_id),
@@ -151,6 +166,7 @@ class TestExpensesAPI__UpdateExpense:
             json=invalid_patch_expense)
         assert response.status_code == 400, 'Should get a 400 Code Response when {}'.format(expected_str)
 
+
 class TestExpensesAPI__DeleteExpense:
 
     def test_delete_expense__success(self, app, app_client, random_expense):
@@ -163,7 +179,7 @@ class TestExpensesAPI__DeleteExpense:
                 '{}/{}/'.format(ROOT_URL, random_expense['id']),
                 )
             assert response.status_code == 204, 'Should get a 201 Code Response'
-            nbr_of_expenses_in_db = len(ExpenseModel.query.all())
+            nbr_of_expenses_in_db = ExpenseModel.query.count()
             assert nbr_of_expenses_in_db  == pre_nbr_of_expenses_in_db - 1, 'Expecting number of expenses in DB to decrease by one'
 
     def test_delete_expense__not_in_db(self, app_client, wrong_expense_id):
@@ -175,3 +191,4 @@ class TestExpensesAPI__DeleteExpense:
             '{}/{}/'.format(ROOT_URL, wrong_expense_id),
             )
         assert response.status_code == 404, 'Should get a 404 Code Response When trying to delete a expense not existing in DB'
+    
