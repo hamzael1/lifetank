@@ -15,7 +15,7 @@ class TaskModel(db.Model):
     __tablename__ = 'tasks'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, nullable=False)
+    owner_user_id = db.Column(db.Integer, nullable=False)
     title = db.Column(db.String(64), nullable=False)
     comment = db.Column(db.String(255), default='')
     due = db.Column(db.DateTime, nullable=False)
@@ -29,15 +29,15 @@ class TaskModel(db.Model):
 
 class TaskSchema(Schema):
     id = fields.Integer(dump_only=True)
-    user_id = fields.Integer(required=True)
+    owner_user_id = fields.Integer(required=True)
     title = fields.Str(required=True)
     comment = fields.Str(required=True)
     due = fields.DateTime(required=True, format='iso')
     done = fields.Bool(required=True)
     created = fields.DateTime(dump_only=True, format='iso')
 
-    @validates("user_id")
-    def validate_user_id(self, value):
+    @validates("owner_user_id")
+    def validate_owner_user_id(self, value):
         if value < 1:
             raise ValidationError('user_id cant be less than 1')
     
@@ -65,7 +65,7 @@ def populate_db(app, user_ids=[1000,1001], nbr_tasks_per_user=5):
         for uid in user_ids:
             for i in range(nbr_tasks_per_user):
                 t =  TaskModel( 
-                    user_id=uid,
+                    owner_user_id=uid,
                     title='Task Title {}'.format(i),
                     comment='Comment for Task {}'.format(i),
                     due=today + timedelta(days=randrange(1,100)),
