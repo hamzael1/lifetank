@@ -1,10 +1,12 @@
-from flask import request, jsonify
+from flask import request, jsonify, make_response
 
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import (create_access_token, 
                                 create_refresh_token,
                                 jwt_refresh_token_required,
+                                jwt_required,
                                 get_jwt_identity)
+import requests
 
 from passlib.hash import sha256_crypt
 
@@ -47,10 +49,18 @@ def init_routes(app):
         else:
             return {'message': 'auth failed'}, 401
 
-    @app.route('/auth/refresh/', methods=['POST'])
-    @jwt_refresh_token_required
-    def token_refresh():
+
+    EXPENSES_SERVICE_HOST = 'localhost'
+    EXPENSES_SERVICE_PORT = '5555'
+    EXPENSES_SERVICE_URL = 'http://{}:{}'.format(EXPENSES_SERVICE_HOST, EXPENSES_SERVICE_PORT)
+    @app.route('/expenses/', methods=['GET', 'POST'])
+    @jwt_required
+    def expenses():
         current_user = get_jwt_identity()
-        return {
-            'access_token': create_access_token(identity=current_user)
-        }
+        # perform authorization stuff  
+        forward_url = '{}/?{}'.format( EXPENSES_SERVICE_URL, request.url.split('?')[1]) 
+        # return forward_url, '200'
+        resp = requests.request(request.method, url=forward_url, json=request.json)
+        #resp_body = resp.get_json()
+        #print(resp_body)
+        return resp.content, resp.status_code
