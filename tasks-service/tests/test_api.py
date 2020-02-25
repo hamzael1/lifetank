@@ -37,7 +37,7 @@ class TestTasksAPI__GetTasks:
             TEST Get A Specific Task Details from DB belonging to logged user
         """
         response = app_client.get(
-            '{}/{}/'.format(ROOT_URL, random_task['id']),
+            '{}/{}'.format(ROOT_URL, random_task['id']),
             headers={}
             )
         resp_body = response.get_json()
@@ -51,7 +51,7 @@ class TestTasksAPI__GetTasks:
             TEST Get A Specific Task Details which doesnt exist in DB
         """
         response = app_client.get(
-            '{}/{}/'.format(ROOT_URL, wrong_task_id),
+            '{}/{}'.format(ROOT_URL, wrong_task_id),
             headers={}
             )
         assert response.status_code == 404, 'Expecting 404 Response when task id is not in DB'
@@ -120,7 +120,7 @@ class TestTasksAPI__UpdateTask:
                 'done': True
             }
             response = app_client.patch (
-                '{}/{}/'.format(ROOT_URL, random_task['id']),
+                '{}/{}'.format(ROOT_URL, random_task['id']),
                 headers={},
                 json=updated_task )
             assert response.status_code == 200, 'Should get a 200 Code Response'
@@ -139,7 +139,7 @@ class TestTasksAPI__UpdateTask:
             'done': True
         }
         response = app_client.patch(
-            '{}/{}/'.format(ROOT_URL, wrong_task_id),
+            '{}/{}'.format(ROOT_URL, wrong_task_id),
             headers={},
             json=updated_task)
         assert response.status_code == 404, 'Should get a 404 Code Response when non existing task is provided'
@@ -150,7 +150,7 @@ class TestTasksAPI__UpdateTask:
             TEST PATCH Request to update a Task with invalid request
         """
         response = app_client.patch(
-            '{}/{}/'.format(ROOT_URL, random_task['id']),
+            '{}/{}'.format(ROOT_URL, random_task['id']),
             headers={},
             json=invalid_patch_task)
         assert response.status_code == 400, 'Should get a 400 Code Response when {}'.format(expected_str)
@@ -165,7 +165,7 @@ class TestTasksAPI__DeleteTask:
         with app.app_context():
             pre_nbr_of_tasks_in_db = len(TaskModel.query.all())
             response = app_client.delete(
-                '{}/{}/'.format(ROOT_URL, random_task['id']),
+                '{}/{}'.format(ROOT_URL, random_task['id']),
                 headers={},
                 )
             assert response.status_code == 204, 'Should get a 201 Code Response'
@@ -178,7 +178,7 @@ class TestTasksAPI__DeleteTask:
             not belonging to current logged user
         """
         response = app_client.delete(
-            '{}/{}/'.format(ROOT_URL, wrong_task_id),
+            '{}/{}'.format(ROOT_URL, wrong_task_id),
             headers={},
             )
         assert response.status_code == 404, 'Should get a 404 Code Response When trying to delete a task not existing in DB'

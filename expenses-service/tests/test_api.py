@@ -50,7 +50,7 @@ class TestExpensesAPI__GetExpenses:
             TEST Get A Specific Expense Details from DB belonging to logged user
         """
         response = app_client.get(
-            '{}/{}/'.format(ROOT_URL, random_expense['id']),
+            '{}/{}'.format(ROOT_URL, random_expense['id']),
             )
         resp_body = response.get_json()
         assert response.status_code == 200, 'Should get a 200 Code Response. Got a %s instead' % response.status_code
@@ -62,7 +62,7 @@ class TestExpensesAPI__GetExpenses:
             TEST Get A Specific Expense Details which doesnt exist in DB
         """
         response = app_client.get(
-            '{}/{}/'.format(ROOT_URL, wrong_expense_id),
+            '{}/{}'.format(ROOT_URL, wrong_expense_id),
             )
         assert response.status_code == 404, 'Expecting 404 Response when expense id is not in DB'
 
@@ -132,7 +132,7 @@ class TestExpensesAPI__UpdateExpense:
                 'task_id': random_task_id
             }
             response = app_client.patch (
-                '{}/{}/'.format(ROOT_URL, random_expense['id']),
+                '{}/{}'.format(ROOT_URL, random_expense['id']),
                 json=updated_expense )
             assert response.status_code == 200, 'Should get a 200 Code Response'
             updated_expense = ExpenseModel.query.get(random_expense['id']).__dict__
@@ -152,7 +152,7 @@ class TestExpensesAPI__UpdateExpense:
                 'task_id': random_task_id
             }
         response = app_client.patch(
-            '{}/{}/'.format(ROOT_URL, wrong_expense_id),
+            '{}/{}'.format(ROOT_URL, wrong_expense_id),
             json=updated_expense)
         assert response.status_code == 404, 'Should get a 404 Code Response when non existing expense is provided'
 
@@ -162,7 +162,7 @@ class TestExpensesAPI__UpdateExpense:
             TEST PATCH Request to update a Expense with invalid request
         """
         response = app_client.patch(
-            '{}/{}/'.format(ROOT_URL, random_expense['id']),
+            '{}/{}'.format(ROOT_URL, random_expense['id']),
             json=invalid_patch_expense)
         assert response.status_code == 400, 'Should get a 400 Code Response when {}'.format(expected_str)
 
@@ -176,7 +176,7 @@ class TestExpensesAPI__DeleteExpense:
         with app.app_context():
             pre_nbr_of_expenses_in_db = len(ExpenseModel.query.all())
             response = app_client.delete(
-                '{}/{}/'.format(ROOT_URL, random_expense['id']),
+                '{}/{}'.format(ROOT_URL, random_expense['id']),
                 )
             assert response.status_code == 204, 'Should get a 201 Code Response'
             nbr_of_expenses_in_db = ExpenseModel.query.count()
@@ -188,7 +188,7 @@ class TestExpensesAPI__DeleteExpense:
             not belonging to current logged user
         """
         response = app_client.delete(
-            '{}/{}/'.format(ROOT_URL, wrong_expense_id),
+            '{}/{}'.format(ROOT_URL, wrong_expense_id),
             )
         assert response.status_code == 404, 'Should get a 404 Code Response When trying to delete a expense not existing in DB'
     
