@@ -25,9 +25,9 @@ def create_app(testing=False):
         from .model import ExpenseModel
         NBR_TEST_EXPENSES_PER_TASK = 14
         NBR_TEST_TASKS = 10
-        NBR_TEST_USERS = 5
         TEST_TASKS_IDS = [ randrange(1,1000) for _ in range(NBR_TEST_TASKS) ]
-        TEST_USER_IDS = [ randrange(1,1000) for _ in range(NBR_TEST_USERS) ]
+        TEST_USER_IDS = [ 1000, 1001 ]
+        NBR_TEST_USERS = len(TEST_USER_IDS)
 
         TODAY = datetime.today()
         TEST_EXPENSES = []

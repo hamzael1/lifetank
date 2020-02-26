@@ -58,21 +58,46 @@ def init_routes(app):
     @jwt_required
     def expenses(expense_id=None):
         current_user = get_jwt_identity()
-        # perform authorization stuff
-        params_array = []
-        if expense_id is None:
-            for param, value in request.args.items():
-                params_array.append('{}={}'.format(param, value))
-            params_str = '&'.join(params_array)
-            forward_url = '{}/?{}'.format( EXPENSES_SERVICE_URL, params_str) 
-        else:
+
+        new_body = request.json.copy()
+        params_str = ''
+        if expense_id is None: 
+            if request.method == 'GET': # GET list of all expenses belonging to logged user
+                params_array = []
+                for param, value in request.args.items():
+                    if param != 'owner':
+                        params_array.append('{}={}'.format(param, value))
+
+                params_array.append('{}={}'.format('owner', current_user['id']))
+                params_str = '&'.join(params_array)
+                forward_url = '{}/?{}'.format( EXPENSES_SERVICE_URL, params_str)
+            else: # POST new Expense
+                new_body['owner_user_id'] = current_user['id']
+        else: # GET PATCH DELETE : check if user authorized first
             forward_url = '{}/{}'.format (EXPENSES_SERVICE_URL, expense_id)
-        #print(forward_url)
-        resp = requests.request(request.method, url=forward_url, json=request.json)
-        
+            resp = requests.get(forward_url)
+            if resp.status_code == 200:
+                if resp.json()['owner_user_id'] == current_user['id']:
+                    if request.method == 'PATCH':
+                        new_body['owner_user_id'] = current_user['id']
+                    pass
+                else:
+                    return make_response(
+                        jsonify({'message': 'User unauthorized to perform operation'}),
+                        403,
+                        {  'Content-Type': 'application/json' }
+                    )
+            else:
+                return make_response(
+                        jsonify({'message': 'Something went wrong: couldnt retrieve item'}),
+                        resp.status_code,
+                        {  'Content-Type': 'application/json' }
+                    )
+        resp = requests.request(request.method, url=forward_url, json=new_body)
         return make_response(
-                jsonify(resp.json()) if len(resp.content) > 0 else '',
-                resp.status_code
+                resp.content if len(resp.content) > 0 else '',
+                resp.status_code,
+                { 'Content-Type': 'application/json' }
             )
 
     TASKS_SERVICE_HOST = 'localhost'
