@@ -50,8 +50,8 @@ def init_routes(app):
             return {'message': 'auth failed'}, 401
 
 
-    EXPENSES_SERVICE_HOST = 'localhost'
-    EXPENSES_SERVICE_PORT = '5555'
+    EXPENSES_SERVICE_HOST = 'expenses'
+    EXPENSES_SERVICE_PORT = '8000'
     EXPENSES_SERVICE_URL = 'http://{}:{}'.format(EXPENSES_SERVICE_HOST, EXPENSES_SERVICE_PORT)
     @app.route('/expenses', methods=['GET', 'POST'])
     @app.route('/expenses/<string:expense_id>', methods=['GET', 'PATCH', 'DELETE'])
@@ -100,8 +100,8 @@ def init_routes(app):
                 { 'Content-Type': 'application/json' }
             )
 
-    TASKS_SERVICE_HOST = 'localhost'
-    TASKS_SERVICE_PORT = '2222'
+    TASKS_SERVICE_HOST = 'tasks'
+    TASKS_SERVICE_PORT = '8000'
     TASKS_SERVICE_URL = 'http://{}:{}'.format(TASKS_SERVICE_HOST, TASKS_SERVICE_PORT)
     @app.route('/tasks', methods=['GET', 'POST'])
     @app.route('/tasks/<string:task_id>', methods=['GET', 'PATCH', 'DELETE'])

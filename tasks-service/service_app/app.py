@@ -11,7 +11,7 @@ from .routes import init_routes
 def create_app(testing=False):
     app = Flask(__name__, instance_relative_config=True)
     app.config['TESTING'] = testing
-    print('Creating Flask App ({}{})...'.format(app.config['ENV'], ' - Testing' if testing else '')) 
+    print('Creating Flask Tasks Service App ({}{})...'.format(app.config['ENV'], ' - Testing' if testing else '')) 
     # Get Config depending on current ENV 
     # ( set FLASK_ENV environment variable to "development" or "production" ;
     # default is "production" )
