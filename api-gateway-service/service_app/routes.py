@@ -73,6 +73,7 @@ def init_routes(app):
                 forward_url = '{}/?{}'.format( EXPENSES_SERVICE_URL, params_str)
             else: # POST new Expense
                 new_body['owner_user_id'] = current_user['id']
+                forward_url = '{}'.format( EXPENSES_SERVICE_URL)
         else: # GET PATCH DELETE : check if user authorized first
             forward_url = '{}/{}'.format (EXPENSES_SERVICE_URL, expense_id)
             resp = requests.get(forward_url)
@@ -123,6 +124,7 @@ def init_routes(app):
                 forward_url = '{}/?{}'.format( TASKS_SERVICE_URL, params_str)
             else: # POST new Expense
                 new_body['owner_user_id'] = current_user['id']
+                forward_url = '{}'.format( TASKS_SERVICE_URL)
         else: # GET PATCH DELETE : check if user authorized first
             forward_url = '{}/{}'.format (TASKS_SERVICE_URL, task_id)
             resp = requests.get(forward_url)
