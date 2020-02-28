@@ -26,6 +26,10 @@ services:
             - FLASK_APP=service_app:create_app
             - FLASK_ENV=development
             - FLASK_RUN_PORT=8000
+            - TASKS_SERVICE_HOST=tasks
+            - TASKS_SERVICE_PORT=8000
+            - EXPENSES_SERVICE_HOST=expenses
+            - EXPENSES_SERVICE_PORT=8000
         command: gunicorn --bind 0.0.0.0:8000 wsgi
     nginx-server:
         depends_on:

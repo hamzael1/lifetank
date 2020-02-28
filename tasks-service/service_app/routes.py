@@ -57,7 +57,12 @@ def init_routes(app):
                 Get A specific task
             '''
             task = TaskModel.query.get_or_404(task_id)
-            return task_single_schema.dump(task), '200'
+            if 'check_exists' in request.args:
+                return {
+                    'exists': True if request.args['check_exists'] else False
+                }
+            else:
+                return task_single_schema.dump(task), '200'
 
         def patch(self, task_id):
             task = TaskModel.query.get_or_404(task_id)
