@@ -1,6 +1,5 @@
 import pytest
 from sqlalchemy.sql.expression import func
-from flask_jwt_extended import decode_token
 from service_app.model import db, ExpenseModel
 
 from datetime import datetime, timedelta
@@ -75,28 +74,47 @@ INVALID_EXPENSES = [
     ( { 'owner_user_id': choice(TEST_USER_IDS), 'title': 'title', 'comment': 'comment', 'category': choice(ExpenseModel.EXPENSE_CATEGORIES), 'amount': 0, 'task_id': choice(TEST_TASKS_IDS) }, 'no date is provided' ),
     ( { 'owner_user_id': 0, 'title': 'tltle', 'comment': 'comment', 'category': choice(ExpenseModel.EXPENSE_CATEGORIES), 'amount': randrange(1,1000), 'date':TODAY + timedelta(days=randrange(1,100)), 'task_id': choice(TEST_TASKS_IDS) }, 'no owner user id is provided' ),
 ]
-
-class TestExpensesAPI__PostExpense:
-
-    def test_post_new_expense__success(self, app, app_client, random_task_id, random_user_id):
-        """
-            TEST POST Request to add a new Expense in DB
-        """
-        new_expense = {
+VALID_EXPENSES = [
+                ({ # all fields provided
+                'title': 'title for new expense',
+                'comment': 'comment for expense',
+                'category': choice(ExpenseModel.EXPENSE_CATEGORIES),
+                'amount': randrange(1,1000),
+                'task_id': choice(TEST_TASKS_IDS),
+                'date': (TODAY + timedelta(days=randrange(1,100))).isoformat(),
+                }, 'Expected to allow writing expense with all fields provided'),
+                ({ # no comment provided
+                'title': 'title for new expense',
+                'category': choice(ExpenseModel.EXPENSE_CATEGORIES),
+                'amount': randrange(1,1000),
+                'task_id': choice(TEST_TASKS_IDS),
+                'date': (TODAY + timedelta(days=randrange(1,100))).isoformat(),
+                }, 'Expected to allow writing expense with no comment provided'),
+                ({ # no task_id provided
                 'title': 'title for new expense',
                 'comment': 'comment for expense',
                 'category': choice(ExpenseModel.EXPENSE_CATEGORIES),
                 'amount': randrange(1,1000),
                 'date': (TODAY + timedelta(days=randrange(1,100))).isoformat(),
-                'owner_user_id': random_user_id,
-                'task_id': random_task_id
-        }
+                }, 'Expected to allow writing expense with no task_id provided')
+    ]
+
+class TestExpensesAPI__PostExpense:
+
+    @pytest.mark.parametrize('new_expense, expected_str', VALID_EXPENSES)
+    def test_post_new_expense__success(self, app, app_client, random_task_id, random_user_id, new_expense,  expected_str):
+        """
+            TEST POST Request to add a new Expense in DB
+        """
+
         with app.app_context():
+            new_expense['owner_user_id'] = random_user_id
             nbr_of_expenses_in_db_pre = ExpenseModel.query.count()
             response = app_client.post(
                     '{}/'.format(ROOT_URL),
                     json=new_expense
             )
+            print(response.get_json())
             assert response.status_code == 201, 'Should get a 201 Code Response'
             assert nbr_of_expenses_in_db_pre + 1 == ExpenseModel.query.count() , 'Expecting number of expenses in DB to increase by one'
             resp_body = response.get_json()
@@ -116,21 +134,14 @@ class TestExpensesAPI__PostExpense:
 
 class TestExpensesAPI__UpdateExpense:
     
-    def test_patch_expense__success(self, app, app_client, random_expense, random_task_id, random_user_id):
+    @pytest.mark.parametrize('updated_expense, expected_str', VALID_EXPENSES)
+    def test_patch_expense__success(self, app, app_client, random_expense, updated_expense, expected_str,random_task_id, random_user_id):
         """
             TEST PATCH Request to update a Expense in DB
         """
         with app.app_context():
             new_title = 'Updated Title of Expense'
-            updated_expense = {
-                'title': new_title,
-                'comment': 'new comment for expense',
-                'category': choice(ExpenseModel.EXPENSE_CATEGORIES),
-                'amount': randrange(1,1000),
-                'date': (TODAY + timedelta(days=randrange(1,100))).isoformat(),
-                'owner_user_id': random_user_id,
-                'task_id': random_task_id
-            }
+            updated_expense['title'] = new_title
             response = app_client.patch (
                 '{}/{}'.format(ROOT_URL, random_expense['id']),
                 json=updated_expense )

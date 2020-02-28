@@ -34,28 +34,14 @@ def init_routes(app):
             return expense_list_schema.dump(expenses)
         
         def post(self):
-            expense = {
-                'amount': request.json['amount'] if 'amount' in request.json else None,
-                'title': request.json['title'] if 'title' in request.json else None,
-                'comment': request.json['comment'] if 'comment' in request.json else None,
-                'date': request.json['date'] if 'date' in request.json else None,
-                'category': request.json['category'] if 'category' in request.json else None,
-                'owner_user_id': request.json['owner_user_id'] if 'owner_user_id' in request.json else None,
-                'task_id': request.json['task_id'] if 'task_id' in request.json else None,
-            }
-            validation_errors = expense_single_schema.validate(expense)
+            request_expense = request.json.copy()
+            validation_errors = expense_single_schema.validate(request_expense)
             if validation_errors:
                 return {'errors': validation_errors}, '400'
-            expense = expense_single_schema.load(expense)
-            new_expense = ExpenseModel(
-                amount=expense['amount'],
-                owner_user_id=expense['owner_user_id'],
-                task_id=expense['task_id'],
-                title=expense['title'],
-                comment=expense['comment'],
-                category=expense['category'],
-                date=expense['date']
-            )
+            expense = expense_single_schema.load(request_expense)
+            new_expense = ExpenseModel()
+            for k, v in expense.items():
+                setattr(new_expense, k, v)
             db.session.add(new_expense)
             db.session.commit()
             return expense_single_schema.dump(new_expense), '201'
@@ -69,26 +55,13 @@ def init_routes(app):
         def patch(self, expense_id):
             expense = ExpenseModel.query.get_or_404(expense_id)
 
-            request_expense = {
-                'amount': request.json['amount'],
-                'title': request.json['title'] if 'title' in request.json else None,
-                'comment': request.json['comment'] if 'comment' in request.json else None,
-                'date': request.json['date'] if 'date' in request.json else None,
-                'category': request.json['category'] if 'category' in request.json else None,
-                'owner_user_id': request.json['owner_user_id'] if 'owner_user_id' in request.json else None,
-                'task_id': request.json['task_id'] if 'task_id' in request.json else None
-            }
+            request_expense = request.json.copy()
             validation_errors = expense_single_schema.validate(request_expense)
             if validation_errors:
                 return {'errors': validation_errors}, '400'
             request_expense = expense_single_schema.load(request_expense)
-            expense.amount = request_expense['amount']
-            expense.category = request_expense['category']
-            expense.title = request_expense['title']
-            expense.comment = request_expense['comment']
-            expense.date = request_expense['date']
-            expense.task_id = request_expense['owner_user_id']
-            expense.task_id = request_expense['task_id']
+            for k, v in request_expense.items():
+                setattr(expense, k, v)
             db.session.commit()
             return expense_single_schema.dump(expense), '200'
 

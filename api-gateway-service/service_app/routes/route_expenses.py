@@ -12,6 +12,10 @@ def expenses_requests_handler(expense_id=None):
     current_user = get_jwt_identity()
 
     new_body = request.json.copy()
+    
+    if (not 'task_id' in new_body) or (new_body['task_id'] is None):
+        new_body['task_id'] = 0 
+    
     params_str = ''
     if expense_id is None: 
         if request.method == 'GET': # GET list of all expenses belonging to logged user
