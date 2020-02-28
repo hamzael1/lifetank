@@ -2,11 +2,13 @@ from flask import request, jsonify, make_response
 from flask_jwt_extended import jwt_required, get_jwt_identity
 import requests
 
-from .service_endpoints import EXPENSES_SERVICE_URL
 
 
 @jwt_required
 def expenses_requests_handler(expense_id=None):
+    from .helpers import user_has_right_to_add_expense_to_task
+    from .service_endpoints import EXPENSES_SERVICE_URL
+
     current_user = get_jwt_identity()
 
     new_body = request.json.copy()
@@ -22,14 +24,26 @@ def expenses_requests_handler(expense_id=None):
             params_str = '&'.join(params_array)
             forward_url = '{}/?{}'.format( EXPENSES_SERVICE_URL, params_str)
         else: # POST new Expense
+            if not user_has_right_to_add_expense_to_task(current_user['id'], new_body['task_id']):
+                return make_response(
+                    jsonify({'message': 'Could not write expense for Task provided ( either because it does not exist or because user is not authorized )'}),
+                    403,
+                    {  'Content-Type': 'application/json' }
+                )
             new_body['owner_user_id'] = current_user['id']
             forward_url = '{}'.format( EXPENSES_SERVICE_URL)
     else: # GET/PATCH/DELETE single Expense: check if user authorized first
         forward_url = '{}/{}'.format (EXPENSES_SERVICE_URL, expense_id)
         resp = requests.get(forward_url)
         if resp.status_code == 200:
-            if resp.json()['owner_user_id'] == current_user['id']:
+            if new_body['owner_user_id'] == current_user['id']:
                 if request.method == 'PATCH':
+                    if not user_has_right_to_add_expense_to_task(current_user['id'], new_body['task_id']):
+                        return make_response(
+                        jsonify({'message': 'Could not write expense for Task provided ( either because it does not exist or because user is not authorized )'}),
+                        403,
+                        {  'Content-Type': 'application/json' }
+                )
                     new_body['owner_user_id'] = current_user['id']
                 pass
             else:
@@ -44,15 +58,8 @@ def expenses_requests_handler(expense_id=None):
                     resp.status_code,
                     {  'Content-Type': 'application/json' }
                 )
-    if request.method == 'POST' or request.method == 'PATCH':
-        task_id = new_body['task_id']
-        resp = request.get('{}/?check_exists=True'.format(TASKS_SERVICE_URL))
-        if resp.json()['exists'] is False:
-            return make_response(
-                jsonify({
-                    'message': 'Task ID not found'
-                })
-            )
+
+    # Main Reroute Request
     resp = requests.request(request.method, url=forward_url, json=new_body)
     return make_response(
             resp.content if len(resp.content) > 0 else '',

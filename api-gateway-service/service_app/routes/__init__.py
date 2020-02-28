@@ -8,14 +8,7 @@ from .route_expenses import expenses_requests_handler
 
 def init_routes(app):
 
-    PATHS = { 
-        'DUMMY' : '/auth/dummy',
-        'LOGIN': '/auth/login/',
-        'TASK_LIST': '/tasks',
-        'TASK_SINGLE': '/tasks/<string:task_id>',
-        'EXPENSE_LIST': '/expenses',
-        'EXPENSE_SINGLE': '/expenses/<string:expense_id>'
-    }
+    from .paths import PATHS
 
     # Dummy Endpoint for test
     @app.route(PATHS['DUMMY'], methods=['GET'])
