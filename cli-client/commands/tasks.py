@@ -1,4 +1,4 @@
-from click import echo, option
+from click import echo, option, group, argument
 import requests
 import os
 from datetime import datetime, timedelta
@@ -10,6 +10,7 @@ TASKS_EDIT_URL = 'http://127.0.0.1:8000/tasks/'
 TASKS_DELETE_URL = 'http://127.0.0.1:8000/tasks/'
 DEFAULT_DUE_DATE = (datetime.today() + timedelta(days=1)).strftime('%Y-%m-%d')
 
+@group()
 def task():
     echo('Tasks ...')
 
@@ -21,6 +22,7 @@ def print_task(d, details=False):
         datetime.strptime(d['due'].split('T')[0], '%Y-%m-%d').strftime('%Y-%m-%d'))
         )
 
+@task.command()
 def fetch():
     echo('Fetching Tasks')
     resp = requests.get(TASKS_FETCH_LIST_URL, json={}, headers=HEADERS)
@@ -33,6 +35,7 @@ def fetch():
         echo('Unexpected Response from server (Code {})'.format(resp.status_code))
 
 
+@task.command()
 @option('--title', prompt=True, help='Title of task')
 @option('--comment', prompt=True, default='', help='Comment of task')
 @option('--due', prompt=True, default=DEFAULT_DUE_DATE, help='Due Date of Task')
@@ -58,7 +61,8 @@ def add(title, comment, due, done):
     else:
         echo('Unexpected Response from server (Code {})'.format(resp.status_code))
 
-@option('--task_id', prompt=True, help='ID of task to delete')
+@task.command()
+@argument('task_id', nargs=1)
 @option('--title', prompt=True, help='Title of task')
 @option('--comment', prompt=True, default='', help='Comment of task')
 @option('--due', prompt=True, default=DEFAULT_DUE_DATE, help='Due Date of Task')
@@ -84,7 +88,8 @@ def edit(task_id, title, comment, due, done):
     else:
         echo('Unexpected Response from server (Code {})'.format(resp.status_code))
 
-@option('--task_id', prompt=True, help='ID of task to delete')
+@task.command()
+@argument('task_id', nargs=1)
 def delete(task_id):
     resp = requests.delete('{}{}'.format(TASKS_DELETE_URL, task_id), json={}, headers=HEADERS )
     if resp.status_code == 204:
@@ -93,12 +98,3 @@ def delete(task_id):
         echo('Task or endpoint not found')
     else:
         echo('Unexpected Response from server (Code {})'.format(resp.status_code))
-
-def init_commands(group):
-    g = group()(task)
-    g.add_command( add, name='add')
-    #g.command()(add)
-    g.command()(fetch)
-    g.command()(add)
-    g.command()(edit)
-    g.command()(delete)

@@ -1,8 +1,10 @@
-from click import option, echo, password_option
+
+from click import option, echo, password_option, command
 import requests
 import os
 
 
+@command()
 @option('--username', prompt=True, default='dev_user_1', help='username to login is mandatory' )
 @password_option('--password', default='passpass', confirmation_prompt=False)
 def login(username, password):
@@ -19,13 +21,7 @@ def login(username, password):
     else:
         echo('Unexpected Response from server (Code {})'.format(resp.status_code))
 
-    
-    
 
-
+@command()
 def logout():
     echo('Logout ...')
-
-def init_commands(command):
-    command()(login)
-    command()(logout)
