@@ -18,7 +18,7 @@ class ExpenseModel(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     owner_user_id = db.Column(db.Integer, nullable=False)
-    task_id = db.Column(db.Integer, nullable=True)
+    task_id = db.Column(db.Integer, default=0)
     amount = db.Column(db.Integer, nullable=False)
     title = db.Column(db.String(64), nullable=False)
     comment = db.Column(db.String(255), default='')
@@ -34,10 +34,10 @@ class ExpenseModel(db.Model):
 class ExpenseSchema(Schema):
     id = fields.Integer(dump_only=True)
     owner_user_id = fields.Integer(required=True)
-    task_id = fields.Integer(required=True)
+    task_id = fields.Integer(required=False, missing=0)
     amount = fields.Integer(required=True)
     title = fields.Str(required=True)
-    comment = fields.Str(required=False)
+    comment = fields.Str(required=False, missing='')
     date = fields.DateTime(required=True, format='iso')
     category = fields.Str(required=True)
     created = fields.DateTime(dump_only=True, format='iso')
@@ -49,8 +49,8 @@ class ExpenseSchema(Schema):
 
     @validates("task_id")
     def validate_task_id(self, value):
-        if value < 1:
-            raise ValidationError('task_id cant be less than 1')
+        if value  < 0:
+            raise ValidationError('Task ID must be equal or larger than 0')
 
     @validates("amount")
     def validate_amount(self, value):
