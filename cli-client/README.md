@@ -1,0 +1,1 @@
+This is small CLI app to interact with the backend easily.
