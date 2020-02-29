@@ -38,30 +38,22 @@ def expenses_requests_handler(expense_id=None):
             forward_url = '{}'.format( EXPENSES_SERVICE_URL)
     else: # GET/PATCH/DELETE single Expense: check if user authorized first
         forward_url = '{}/{}'.format (EXPENSES_SERVICE_URL, expense_id)
-        resp = requests.get(forward_url)
-        if resp.status_code == 200:
-            if new_body['owner_user_id'] == current_user['id']:
-                if request.method == 'PATCH':
-                    if not user_has_right_to_add_expense_to_task(current_user['id'], new_body['task_id']):
-                        return make_response(
+        if user_has_right_to_add_expense_to_task(current_user['id'], new_body['task_id']):
+            if request.method == 'PATCH':
+                if not user_has_right_to_add_expense_to_task(current_user['id'], new_body['task_id']):
+                    return make_response(
                         jsonify({'message': 'Could not write expense for Task provided ( either because it does not exist or because user is not authorized )'}),
                         403,
                         {  'Content-Type': 'application/json' }
-                )
-                    new_body['owner_user_id'] = current_user['id']
-                pass
-            else:
-                return make_response(
-                    jsonify({'message': 'User unauthorized to perform operation'}),
-                    403,
-                    {  'Content-Type': 'application/json' }
-                )
+                        )
+                new_body['owner_user_id'] = current_user['id']
+            pass
         else:
             return make_response(
-                    jsonify({'message': 'Something went wrong: couldnt retrieve item'}),
-                    resp.status_code,
-                    {  'Content-Type': 'application/json' }
-                )
+                jsonify({'message': 'User unauthorized to perform operation'}),
+                403,
+                {  'Content-Type': 'application/json' }
+            )
 
     # Main Reroute Request
     resp = requests.request(request.method, url=forward_url, json=new_body)
