@@ -7,7 +7,7 @@ from commands.expenses import init_commands as expenses_init_commands
 
 @group()
 def cli():
-    echo('cc')
+    pass
 
 auth_init_commands(cli.command)
 tasks_init_commands(cli.group)
