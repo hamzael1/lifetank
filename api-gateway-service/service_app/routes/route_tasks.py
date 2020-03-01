@@ -3,7 +3,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 import requests
 
 from .service_endpoints import TASKS_SERVICE_URL
-
+from .paths import PATHS
+from datetime import datetime
 
 @jwt_required
 def tasks_requests_handler(task_id=None):
@@ -14,9 +15,14 @@ def tasks_requests_handler(task_id=None):
     if task_id is None: 
         if request.method == 'GET': # GET list of all tasks belonging to logged user
             params_array = []
-            for param, value in request.args.items():
-                if param != 'owner':
-                    params_array.append('{}={}'.format(param, value))
+            #print(request.path, PATHS['TASK_LIST_TODAY'])
+            if request.path == PATHS['TASK_LIST_TODAY']:
+                print('Today Tasks')
+                params_array.append('due={}'.format(datetime.today().strftime('%Y-%m-%d') ))
+            else:
+                for param, value in request.args.items():
+                    if param != 'owner':
+                        params_array.append('{}={}'.format(param, value))
 
             params_array.append('{}={}'.format('owner', current_user['id']))
             params_str = '&'.join(params_array)

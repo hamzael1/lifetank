@@ -2,7 +2,7 @@
 from click import option, echo, password_option, command
 import requests
 import os
-
+from .settings import HOST, PORT
 
 @command()
 @option('--username', prompt=True, default='dev_user_1', help='username to login is mandatory' )
@@ -10,7 +10,7 @@ import os
 def login(username, password):
     assert (username and password), 'Username & Password are mandatory'
     payload = {'username': username, 'password': password}
-    LOGIN_URL = 'http://127.0.0.1:8000/auth/login/'
+    LOGIN_URL = 'http://{}:{}/auth/login/'.format(HOST, PORT)
     resp = requests.post(LOGIN_URL, json=payload)
     if resp.status_code == 200:
         echo('Authentication Successful')

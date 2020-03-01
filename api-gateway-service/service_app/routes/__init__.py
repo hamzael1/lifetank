@@ -21,7 +21,8 @@ def init_routes(app):
     app.route(PATHS['LOGIN'], methods=['POST'])(login_request_handler)
 
     # Tasks Endpoints
-    app.route(PATHS['TASK_LIST'], methods=['GET', 'POST'])(tasks_requests_handler)
+    app.route(PATHS['TASK_LIST_TODAY'], methods=['GET', 'POST'])(tasks_requests_handler)
+    app.route(PATHS['TASK_LIST_ALL'], methods=['GET', 'POST'])(tasks_requests_handler)
     app.route(PATHS['TASK_SINGLE'], methods=['GET', 'PATCH', 'DELETE'])(tasks_requests_handler)
 
     # Expenses Endpoints

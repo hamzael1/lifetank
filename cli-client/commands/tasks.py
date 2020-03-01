@@ -2,12 +2,13 @@ from click import echo, option, group, argument
 import requests
 import os
 from datetime import datetime, timedelta
+from .settings import HOST, PORT
 
 HEADERS = {'Authorization': 'Bearer {}'.format(os.environ.get('LIFETANK_ATOKEN'))}
-TASKS_FETCH_LIST_URL = 'http://127.0.0.1:8000/tasks'
-TASKS_ADD_URL = 'http://127.0.0.1:8000/tasks'
-TASKS_EDIT_URL = 'http://127.0.0.1:8000/tasks/'
-TASKS_DELETE_URL = 'http://127.0.0.1:8000/tasks/'
+TASKS_FETCH_LIST_URL = 'http://{}:{}/tasks'.format(HOST, PORT)
+TASKS_ADD_URL = 'http://{}:{}/tasks'.format(HOST, PORT)
+TASKS_EDIT_URL = 'http://{}:{}/tasks/'.format(HOST, PORT)
+TASKS_DELETE_URL = 'http://{}:{}/tasks/'.format(HOST, PORT)
 DEFAULT_DUE_DATE = (datetime.today() + timedelta(days=1)).strftime('%Y-%m-%d')
 
 @group()
@@ -23,9 +24,11 @@ def print_task(d, details=False):
         )
 
 @task.command()
-def fetch():
-    echo('Fetching Tasks')
-    resp = requests.get(TASKS_FETCH_LIST_URL, json={}, headers=HEADERS)
+@option('--today', is_flag=True)
+def fetch(today):
+    echo('Fetching Tasks{}'.format(' for today' if today else ''))
+    url = '{}{}'.format(TASKS_FETCH_LIST_URL, '/today' if today else '')
+    resp = requests.get(url, json={}, headers=HEADERS)
     if resp.status_code == 200:
         tasks = resp.json()
         echo('\nTasks: {}'.format(len(tasks)))

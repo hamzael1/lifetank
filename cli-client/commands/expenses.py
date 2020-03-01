@@ -3,14 +3,15 @@ import requests
 import os
 from datetime import datetime, timedelta
 
+from .settings import HOST, PORT
 
 
 
 HEADERS = {'Authorization': 'Bearer {}'.format(os.environ.get('LIFETANK_ATOKEN'))}
-EXPENSES_FETCH_LIST_URL = 'http://127.0.0.1:8000/expenses'
-EXPENSES_ADD_URL = 'http://127.0.0.1:8000/expenses'
-EXPENSES_EDIT_URL = 'http://127.0.0.1:8000/expenses/'
-EXPENSES_DELETE_URL = 'http://127.0.0.1:8000/expenses/'
+EXPENSES_FETCH_LIST_URL = 'http://{}:{}/expenses'.format(HOST, PORT)
+EXPENSES_ADD_URL = 'http://{}:{}/expenses'.format(HOST, PORT)
+EXPENSES_EDIT_URL = 'http://{}:{}/expenses/'.format(HOST, PORT)
+EXPENSES_DELETE_URL = 'http://{}:{}/expenses/'.format(HOST, PORT)
 DEFAULT_DATE = datetime.today().strftime('%Y-%m-%d')
 
 @group()

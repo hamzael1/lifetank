@@ -3,6 +3,7 @@ from flask_restful import Resource, Api
 from flask import request
 from .model import db, TaskModel, TaskSchema
 
+from datetime import datetime
 
 
 def init_routes(app):
@@ -24,7 +25,11 @@ def init_routes(app):
                 Get all tasks belonging to a user (specify owner_user_id in URL Param)
             '''
             owner_user_id = request.args.get('owner')
-            tasks = TaskModel.query.filter_by(owner_user_id=owner_user_id).all() # Get Tasks of user
+            request_due = request.args.get('due')
+            args = {'owner_user_id': owner_user_id}
+            if request_due:
+                args['due'] = datetime.strptime(request_due, '%Y-%m-%d')
+            tasks = TaskModel.query.filter_by(**args).all() # Get Tasks of user
             return task_list_schema.dump(tasks)
         
         def post(self):
